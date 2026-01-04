@@ -1,0 +1,10 @@
+<svg width="400" height="150" viewBox="0 0 400 150" xmlns="http://www.w3.org/2000/svg">
+  <!-- Circle symbol -->
+  <g transform="translate(20, 25)">
+    <!-- Black shape with circle hole cut out -->
+    <path d="M 50 0 L 100 0 L 100 50 Q 100 100 50 100 L 0 100 L 0 50 Q 0 0 50 0 Z M 89 50 A 39 39 0 1 0 11 50 A 39 39 0 1 0 89 50 Z" fill="black" fill-rule="evenodd"/>
+  </g>
+  
+  <!-- Street text -->
+  <text x="140" y="95" font-family="Arial, sans-serif" font-size="72" font-weight="300" fill="black">Street</text>
+</svg>
