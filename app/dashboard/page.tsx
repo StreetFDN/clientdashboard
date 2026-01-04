@@ -159,8 +159,8 @@ export default function DashboardPage() {
       <NavigationBox 
         onBoxBlurChange={setBoxBlur}
         onBoxRefractionChange={setBoxRefraction}
-        onNavbarBlurChange={setBoxBlur}
-        onNavbarRefractionChange={setBoxRefraction}
+        onNavbarBlurChange={setNavbarBlur}
+        onNavbarRefractionChange={setNavbarRefraction}
       />
       <DashboardNavbar 
         pageTitle="Client Dashboard" 
@@ -168,8 +168,8 @@ export default function DashboardPage() {
         logoSize={200} 
         sidebarOpen={sidebarOpen}
         onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-        navbarBlur={boxBlur}
-        navbarRefraction={boxRefraction}
+        navbarBlur={navbarBlur}
+        navbarRefraction={navbarRefraction}
       />
 
       {/* Video Background - Static at top, always full screen */}
