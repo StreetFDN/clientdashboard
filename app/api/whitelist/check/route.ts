@@ -30,8 +30,21 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ whitelisted: false }, { status: 401 })
     }
 
-    // Check whitelist table
-    const { data: whitelistEntry, error } = await supabase
+    // Use service role to bypass RLS for whitelist check
+    const { createClient } = require('@supabase/supabase-js')
+    const adminClient = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+        },
+      }
+    )
+
+    // Check whitelist table using service role
+    const { data: whitelistEntry, error } = await adminClient
       .from('whitelist')
       .select('*')
       .eq('email', user.email)

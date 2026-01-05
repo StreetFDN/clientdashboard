@@ -45,23 +45,29 @@ ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE team_invitations ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies for whitelist (admin only access via service role)
+DROP POLICY IF EXISTS "Service role can manage whitelist" ON whitelist;
 CREATE POLICY "Service role can manage whitelist" ON whitelist
   FOR ALL USING (auth.role() = 'service_role');
 
 -- RLS Policies for user_profiles (users can read/update their own profile)
+DROP POLICY IF EXISTS "Users can read own profile" ON user_profiles;
 CREATE POLICY "Users can read own profile" ON user_profiles
   FOR SELECT USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can update own profile" ON user_profiles;
 CREATE POLICY "Users can update own profile" ON user_profiles
   FOR UPDATE USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Service role can manage profiles" ON user_profiles;
 CREATE POLICY "Service role can manage profiles" ON user_profiles
   FOR ALL USING (auth.role() = 'service_role');
 
 -- RLS Policies for team_invitations
+DROP POLICY IF EXISTS "Users can read invitations for their email" ON team_invitations;
 CREATE POLICY "Users can read invitations for their email" ON team_invitations
   FOR SELECT USING (email = (SELECT email FROM auth.users WHERE id = auth.uid()));
 
+DROP POLICY IF EXISTS "Service role can manage invitations" ON team_invitations;
 CREATE POLICY "Service role can manage invitations" ON team_invitations
   FOR ALL USING (auth.role() = 'service_role');
 
