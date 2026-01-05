@@ -23,7 +23,7 @@ export default function DashboardSidebar({ isOpen }: DashboardSidebarProps) {
 
   return (
     <div
-      className="fixed left-0 border-r border-gray-200 z-40 w-64 bg-gray-50"
+      className="fixed left-0 border-r border-[#3a3a38] z-40 w-64 bg-[#30302E]"
       style={{ 
         top: '64px',
         height: 'calc(100vh - 64px)',
@@ -42,7 +42,7 @@ export default function DashboardSidebar({ isOpen }: DashboardSidebarProps) {
         <nav className="space-y-4">
           {/* GENERAL Section */}
           <div>
-            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-3">
+            <div className="text-xs font-semibold text-[#d4d4d1] uppercase tracking-wider mb-2 px-3">
               GENERAL
             </div>
             <div className="space-y-1">
@@ -55,8 +55,8 @@ export default function DashboardSidebar({ isOpen }: DashboardSidebarProps) {
                     href={item.href}
                     className={`flex items-center p-3 rounded-lg transition-all duration-200 relative ${
                       isActive
-                        ? 'text-black font-semibold bg-gray-200/50'
-                        : 'text-black/80 hover:bg-gray-100/50 hover:text-black'
+                        ? 'text-[#FAF9F6] font-semibold bg-[#3a3a38]'
+                        : 'text-[#d4d4d1] hover:bg-[#3a3a38] hover:text-[#FAF9F6]'
                     }`}
                   >
                     <Icon className="w-5 h-5 mr-3" />
@@ -68,11 +68,11 @@ export default function DashboardSidebar({ isOpen }: DashboardSidebarProps) {
           </div>
 
           {/* Separator Line */}
-          <div className="border-t border-gray-300 my-2"></div>
+          <div className="border-t border-[#3a3a38] my-2"></div>
 
           {/* UPDATES Section */}
           <div>
-            <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-3">
+            <div className="text-xs font-semibold text-[#d4d4d1] uppercase tracking-wider mb-2 px-3">
               UPDATES
             </div>
             <div className="space-y-1">
@@ -85,8 +85,8 @@ export default function DashboardSidebar({ isOpen }: DashboardSidebarProps) {
                     href={item.href}
                     className={`flex items-center p-3 rounded-lg transition-all duration-200 relative ${
                       isActive
-                        ? 'text-black font-semibold bg-gray-200/50'
-                        : 'text-black/80 hover:bg-gray-100/50 hover:text-black'
+                        ? 'text-[#FAF9F6] font-semibold bg-[#3a3a38]'
+                        : 'text-[#d4d4d1] hover:bg-[#3a3a38] hover:text-[#FAF9F6]'
                     }`}
                   >
                     <Icon className="w-5 h-5 mr-3" />

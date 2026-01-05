@@ -4,10 +4,7 @@ import type { NextRequest } from 'next/server'
 import { cookies } from 'next/headers'
 
 export async function GET(request: NextRequest) {
-  const requestUrl = new URL(request.url)
-  const code = requestUrl.searchParams.get('code')
-
-  if (code) {
+  try {
     const cookieStore = await cookies()
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -26,11 +23,31 @@ export async function GET(request: NextRequest) {
         },
       }
     )
-    
-    await supabase.auth.exchangeCodeForSession(code)
-  }
 
-  // Redirect to onboarding check after OAuth callback
-  return NextResponse.redirect(new URL('/onboarding/check', requestUrl.origin))
+    const { data: { user } } = await supabase.auth.getUser()
+    
+    if (!user?.email) {
+      return NextResponse.json({ whitelisted: false }, { status: 401 })
+    }
+
+    // Check whitelist table
+    const { data: whitelistEntry, error } = await supabase
+      .from('whitelist')
+      .select('*')
+      .eq('email', user.email)
+      .single()
+
+    if (error || !whitelistEntry) {
+      return NextResponse.json({ whitelisted: false })
+    }
+
+    return NextResponse.json({ 
+      whitelisted: whitelistEntry.is_whitelisted,
+      onboarding_complete: whitelistEntry.onboarding_complete 
+    })
+  } catch (error) {
+    console.error('Error checking whitelist:', error)
+    return NextResponse.json({ whitelisted: false }, { status: 500 })
+  }
 }
 

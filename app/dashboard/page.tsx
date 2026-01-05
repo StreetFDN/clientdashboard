@@ -3,185 +3,110 @@
 import { useEffect, useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { User } from '@supabase/supabase-js'
-import { Inter } from 'next/font/google'
 import DashboardNavbar from '@/components/DashboardNavbar'
 import DashboardSidebar from '@/components/DashboardSidebar'
 import NavigationBox from '@/components/NavigationBox'
-import { Activity, TrendingUp, BarChart3, UserCircle, Filter, ArrowUpDown, MoreVertical, Maximize2, ArrowUp, ArrowDown, X } from 'lucide-react'
-import { renderExpandedContent } from './expanded-content'
-
-const inter = Inter({ subsets: ['latin'] })
-
-export type BoxId = 'pageViews' | 'totalRevenue' | 'bounceRate' | 'salesOverview' | 'totalSubscriber'
-
-interface BoxData {
-  id: BoxId
-  title: string
-  value: string
-  change: string
-  changeType: 'up' | 'down'
-  icon: React.ReactNode
-  iconBg: string
-  iconColor: string
-  type: 'kpi' | 'chart'
-}
+import { Calendar, CreditCard, Clock, Lock, TrendingUp, BarChart3, PieChart, Search, X, MoreVertical, Maximize2, Building2, Calculator, Users, Wallet, LineChart, Smile } from 'lucide-react'
+import Tutorial from '@/components/Tutorial'
 
 export default function DashboardPage() {
-  // For design/testing purposes, allow access without authentication
-  // Set a mock user to display the dashboard
-  const [user, setUser] = useState<User | null>({
-    id: 'design-user',
-    email: 'design@example.com',
-    created_at: new Date().toISOString(),
-    email_confirmed_at: new Date().toISOString(),
-  } as User)
-  const [loading, setLoading] = useState(false)
+  const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [prevSidebarOpen, setPrevSidebarOpen] = useState(true) // Store previous sidebar state
-  const [expandedBox, setExpandedBox] = useState<BoxId | null>(null)
-  const [animationState, setAnimationState] = useState<'expanding' | 'collapsing' | 'idle'>('idle')
+  const [showTutorial, setShowTutorial] = useState(false)
 
-  const videoRef = useRef<HTMLVideoElement>(null)
-  const buttonRefs = {
-    pageViews: useRef<HTMLButtonElement>(null),
-    totalRevenue: useRef<HTMLButtonElement>(null),
-    bounceRate: useRef<HTMLButtonElement>(null),
-    salesOverview: useRef<HTMLButtonElement>(null),
-    totalSubscriber: useRef<HTMLButtonElement>(null),
-  }
-
-  const boxData: Record<BoxId, BoxData> = {
-    pageViews: {
-      id: 'pageViews',
-      title: 'Page Views',
-      value: '12,450',
-      change: '15.8%',
-      changeType: 'up',
-      icon: <Activity className="w-5 h-5 text-blue-600" />,
-      iconBg: 'bg-blue-100',
-      iconColor: 'text-blue-600',
-      type: 'kpi',
-    },
-    totalRevenue: {
-      id: 'totalRevenue',
-      title: 'Total Revenue',
-      value: '$363.95',
-      change: '34.0%',
-      changeType: 'down',
-      icon: <TrendingUp className="w-5 h-5 text-purple-600" />,
-      iconBg: 'bg-purple-100',
-      iconColor: 'text-purple-600',
-      type: 'kpi',
-    },
-    bounceRate: {
-      id: 'bounceRate',
-      title: 'Bounce Rate',
-      value: '86.5%',
-      change: '24.2%',
-      changeType: 'up',
-      icon: <BarChart3 className="w-5 h-5 text-orange-600" />,
-      iconBg: 'bg-orange-100',
-      iconColor: 'text-orange-600',
-      type: 'kpi',
-    },
-    salesOverview: {
-      id: 'salesOverview',
-      title: 'Sales Overview',
-      value: '$9,257.51',
-      change: '15.8%',
-      changeType: 'up',
-      icon: <TrendingUp className="w-5 h-5 text-indigo-600" />,
-      iconBg: 'bg-indigo-100',
-      iconColor: 'text-indigo-600',
-      type: 'chart',
-    },
-    totalSubscriber: {
-      id: 'totalSubscriber',
-      title: 'Total Subscriber',
-      value: '24,473',
-      change: '8.3%',
-      changeType: 'up',
-      icon: <UserCircle className="w-5 h-5 text-indigo-600" />,
-      iconBg: 'bg-indigo-100',
-      iconColor: 'text-indigo-600',
-      type: 'chart',
-    },
-  }
-
-  // Ensure video plays
+  // Fetch the current user from Supabase
   useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.play().catch((err) => {
-        console.log('Video autoplay prevented:', err)
-      })
+    const fetchUser = async () => {
+      try {
+        const { data: { user: currentUser } } = await supabase.auth.getUser()
+        setUser(currentUser)
+        
+        if (!currentUser) {
+          // Redirect to sign in if no user
+          window.location.href = '/auth/signin'
+          return
+        }
+      } catch (error) {
+        console.error('Error fetching user:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchUser()
+
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+      if (!session?.user) {
+        window.location.href = '/auth/signin'
+      }
+    })
+
+    return () => {
+      subscription.unsubscribe()
     }
   }, [])
 
-  const boxRefs = {
-    pageViews: useRef<HTMLDivElement>(null),
-    totalRevenue: useRef<HTMLDivElement>(null),
-    bounceRate: useRef<HTMLDivElement>(null),
-    salesOverview: useRef<HTMLDivElement>(null),
-    totalSubscriber: useRef<HTMLDivElement>(null),
-  }
-
-  const getBoxPosition = (boxId: BoxId) => {
-    const box = boxRefs[boxId].current
-    if (!box) return { x: 0, y: 0, width: 0, height: 0, centerX: 0, centerY: 0 }
-    
-    const rect = box.getBoundingClientRect()
-    // Get the box position, size, and center
-    const centerX = rect.left + rect.width / 2
-    const centerY = rect.top + rect.height / 2
-    
-    return { 
-      x: rect.left, 
-      y: rect.top, 
-      width: rect.width, 
-      height: rect.height,
-      centerX,
-      centerY,
-    }
-  }
-
-  // Update box position and size when box is expanded (for animation)
-  const [boxPosition, setBoxPosition] = useState({ x: 0, y: 0, width: 0, height: 0, centerX: 0, centerY: 0 })
-  const [expandedBoxSize, setExpandedBoxSize] = useState({ width: 0, height: 0 })
-
-  const handleExpandBox = (boxId: BoxId) => {
-    if (animationState !== 'idle') return
-
-    if (expandedBox === boxId) {
-      // Closing the box
-      setAnimationState('collapsing')
-      // Restore sidebar to previous state immediately (starts at same time as collapse)
-      setSidebarOpen(prevSidebarOpen)
+  // Check if this is first login and show tutorial
+  useEffect(() => {
+    const hasSeenTutorial = localStorage.getItem('hasSeenTutorial')
+    if (!hasSeenTutorial && user) {
       setTimeout(() => {
-        setExpandedBox(null)
-        setAnimationState('idle')
-      }, 300)
-    } else {
-      // Opening a box
-      // Store current sidebar state
-      setPrevSidebarOpen(sidebarOpen)
-      // Hide sidebar if it's open
-      if (sidebarOpen) {
-        setSidebarOpen(false)
-      }
-      // Capture box position and size immediately before expanding
-      const pos = getBoxPosition(boxId)
-      setBoxPosition(pos)
-      // Calculate expanded size (viewport minus padding and navbar)
-      const expandedWidth = window.innerWidth - 48 // 24px padding on each side
-      const expandedHeight = window.innerHeight - 64 - 48 // navbar + padding (24px top + 24px bottom)
-      setExpandedBoxSize({ width: expandedWidth, height: expandedHeight })
-      setExpandedBox(boxId)
-      setAnimationState('expanding')
-      setTimeout(() => {
-        setAnimationState('idle')
-      }, 300)
+        setShowTutorial(true)
+      }, 500)
     }
+  }, [user])
+
+  const handleTutorialComplete = () => {
+    setShowTutorial(false)
+    localStorage.setItem('hasSeenTutorial', 'true')
   }
+
+  const tutorialSteps = [
+    {
+      id: 'sidebar',
+      title: 'Navigation Sidebar',
+      description: 'Use the sidebar to navigate between different sections of your dashboard.',
+      targetSelector: '[data-tutorial="sidebar"]',
+    },
+    {
+      id: 'search',
+      title: 'Search',
+      description: 'Search across your dashboard to quickly find what you need.',
+      targetSelector: '[data-tutorial="search"]',
+    },
+    {
+      id: 'visa-card',
+      title: 'Account Overview',
+      description: 'View your account details, make transactions, and manage your cards here.',
+      targetSelector: '[data-tutorial="visa-card"]',
+    },
+    {
+      id: 'income-card',
+      title: 'Income & Expenses',
+      description: 'Track your total income and expenses with weekly, monthly, or yearly views.',
+      targetSelector: '[data-tutorial="income-card"]',
+    },
+    {
+      id: 'system-lock',
+      title: 'System Status',
+      description: 'Monitor your system lock status and growth rate progress.',
+      targetSelector: '[data-tutorial="system-lock"]',
+    },
+    {
+      id: 'yearly-chart',
+      title: 'Yearly Comparison',
+      description: 'Compare your performance across different years with interactive charts.',
+      targetSelector: '[data-tutorial="yearly-chart"]',
+    },
+  ]
+
+  const currentDate = new Date()
+  const day = currentDate.getDate()
+  const dayName = currentDate.toLocaleDateString('en-US', { weekday: 'short' })
+  const monthName = currentDate.toLocaleDateString('en-US', { month: 'long' })
 
   if (loading) {
     return (
@@ -198,39 +123,22 @@ export default function DashboardPage() {
     return null
   }
 
-  const currentBoxData = expandedBox ? boxData[expandedBox] : null
-
   return (
-    <div className={`min-h-screen ${inter.className} relative page-transition`} style={{ backgroundColor: 'transparent' }}>
-      <DashboardSidebar isOpen={sidebarOpen} />
+    <div className="min-h-screen relative page-transition bg-[#262624]">
+      <DashboardSidebar isOpen={sidebarOpen} data-tutorial="sidebar" />
       <NavigationBox />
       <DashboardNavbar 
         pageTitle="Client Dashboard" 
         user={user} 
-        logoSize={200} 
         sidebarOpen={sidebarOpen}
         onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
       />
 
-      {/* Video Background - Static at top, always full screen */}
-      <div className="fixed inset-0 z-0 bg-black">
-        <video
-          ref={videoRef}
-          autoPlay
-          loop
-          muted
-          playsInline
-          preload="auto"
-          className="absolute inset-0 w-full h-full object-cover"
-          style={{ transform: 'none' }}
-        >
-          <source src="/videos/traffic1-bg.mp4" type="video/mp4" />
-        </video>
-        {/* Dark overlay for better text readability */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/30 to-black/40" />
-      </div>
+      {showTutorial && (
+        <Tutorial steps={tutorialSteps} onComplete={handleTutorialComplete} />
+      )}
       
-      {/* Dashboard Content - Scrollable */}
+      {/* Dashboard Content */}
       <div 
         className="relative transition-all duration-300 ease-in-out overflow-y-auto"
         style={{
@@ -238,252 +146,327 @@ export default function DashboardPage() {
           maxWidth: sidebarOpen ? 'calc(100% - 256px)' : '100%',
           marginTop: '64px',
           height: 'calc(100vh - 64px)',
-          opacity: expandedBox && animationState !== 'collapsing' ? 0 : 1,
-          transform: expandedBox && animationState !== 'collapsing' ? 'scale(0.95)' : 'scale(1)',
-          pointerEvents: expandedBox && animationState !== 'collapsing' ? 'none' : 'auto',
-          zIndex: animationState === 'collapsing' ? 5 : 10,
         }}
       >
-        <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
-            {/* Top Row - 3 KPI Cards */}
-            <div className="grid grid-cols-3 gap-6 mb-6">
-              {(Object.keys(boxData) as BoxId[]).filter(id => boxData[id].type === 'kpi').map((boxId) => {
-                const data = boxData[boxId]
-                return (
-                  <div key={boxId} ref={boxRefs[boxId]} className="bg-white rounded-xl p-6 shadow-sm">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 ${data.iconBg} rounded-lg flex items-center justify-center`}>
-                          {data.icon}
+        <div className="w-full px-6 py-5">
+          {/* Top Section: Date and Help */}
+          <div className="flex items-center justify-between mb-6">
+            {/* Date Section */}
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 rounded-full bg-white border border-[#e9ecef] flex items-center justify-center">
+                <span className="text-2xl font-semibold text-[#212529]">{day}</span>
                         </div>
                         <div>
-                          <h3 className="text-sm font-medium text-gray-600">{data.title}</h3>
+                <p className="text-sm font-medium text-[#212529]">{dayName}, {monthName}</p>
                         </div>
-                      </div>
-                      <button
-                        ref={buttonRefs[boxId]}
-                        onClick={() => handleExpandBox(boxId)}
-                        className="text-gray-400 hover:text-gray-600 transition-colors"
-                      >
-                        <Maximize2 className="w-4 h-4" />
+              <button className="card px-4 py-2 flex items-center gap-2 hover:bg-[#f8f9fa] transition-colors">
+                <span className="text-xs font-medium text-[#212529]">Show my Tasks</span>
+                <TrendingUp className="w-3 h-3 text-[#6c757d]" />
+              </button>
+              <button className="card p-2 hover:bg-[#f8f9fa] transition-colors relative">
+                <Calendar className="w-4 h-4 text-[#6c757d]" />
+                <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-red-500 rounded-full"></span>
                       </button>
                     </div>
-                    <div className="mb-2">
-                      <p className="text-2xl font-bold text-gray-900">{data.value}</p>
+
+            {/* Help Section */}
+            <div className="flex items-center gap-3">
+              <div>
+                <h2 className="serif-heading text-2xl text-[#212529]">
+                  Hey {user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split('@')[0] || 'there'}, Need help? 👋
+                </h2>
+                <p className="text-xs text-[#6c757d]">Just ask me anything!</p>
                     </div>
-                    <div className="flex items-center gap-1 text-sm">
-                      <span className={`${data.changeType === 'up' ? 'text-green-600' : 'text-red-600'} font-medium`}>
-                        {data.change}
-                      </span>
-                      {data.changeType === 'up' ? (
-                        <ArrowUp className={`w-4 h-4 text-green-600`} />
-                      ) : (
-                        <ArrowDown className={`w-4 h-4 text-red-600`} />
-                      )}
+              <a 
+                href="https://t.me/gruberlukas" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="card w-12 h-12 rounded-full flex items-center justify-center hover:bg-[#f8f9fa] transition-colors"
+                aria-label="Telegram"
+              >
+                <svg className="w-5 h-5 text-[#6c757d]" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+                </svg>
+              </a>
                     </div>
                   </div>
-                )
-              })}
+
+          {/* Main Grid */}
+          <div className="grid grid-cols-4 gap-4">
+            {/* VISA Account Card */}
+            <div className="card p-4" data-tutorial="visa-card">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-medium text-[#212529]">VISA</h3>
+                <select className="text-xs text-[#6c757d] bg-transparent border-0 focus:outline-none">
+                  <option>Direct Debits</option>
+                </select>
+              </div>
+              <p className="text-xs text-[#6c757d] mb-3">Linked to main account</p>
+              <p className="text-sm font-medium text-[#212529] mb-4">**** 2719</p>
+              <div className="flex gap-2 mb-3">
+                <button className="card px-3 py-1.5 bg-[#212529] text-white text-xs font-medium hover:bg-[#343a40] transition-colors flex-1">
+                  Receive
+                </button>
+                <button className="card px-3 py-1.5 text-xs font-medium hover:bg-[#f8f9fa] transition-colors flex-1">
+                  Send
+                </button>
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-[#6c757d]">Monthly regular fee</span>
+                <span className="font-medium text-[#212529]">$25.00</span>
+              </div>
             </div>
 
-            {/* Bottom Row - 2 Chart Cards */}
-            <div className="grid grid-cols-2 gap-6">
-              {/* Sales Overview Card */}
-              <div ref={boxRefs.salesOverview} className="bg-white rounded-xl p-6 shadow-sm">
-                <div className="flex items-center justify-between mb-6">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-1">Sales Overview</h3>
-                    <div className="flex items-baseline gap-2">
-                      <p className="text-2xl font-bold text-gray-900">$9,257.51</p>
-                      <div className="flex items-center gap-1 text-sm">
-                        <span className="text-green-600 font-medium">15.8%</span>
-                        <ArrowUp className="w-4 h-4 text-green-600" />
-                      </div>
+            {/* Income/Paid Card */}
+            <div className="card p-4" data-tutorial="income-card">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-[#6c757d]" />
+                    <span className="text-xs text-[#6c757d]">Total income</span>
+                  </div>
+                  <select className="text-xs text-[#6c757d] bg-transparent border-0 focus:outline-none">
+                    <option>Weekly</option>
+                  </select>
+                </div>
+                <p className="text-lg font-semibold text-[#212529]">$23,194.80</p>
+                
+                <div className="border-t border-[#e9ecef] pt-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-[#6c757d]" />
+                      <span className="text-xs text-[#6c757d]">Total paid</span>
                     </div>
-                    <p className="text-sm text-gray-500 mt-1">+ $143.50 increased</p>
+                    <select className="text-xs text-[#6c757d] bg-transparent border-0 focus:outline-none">
+                      <option>Weekly</option>
+                    </select>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <button className="p-2 hover:bg-gray-100 rounded-lg">
-                      <Filter className="w-5 h-5 text-gray-600" />
-                    </button>
-                    <button className="p-2 hover:bg-gray-100 rounded-lg">
-                      <ArrowUpDown className="w-5 h-5 text-gray-600" />
-                    </button>
-                    <button className="p-2 hover:bg-gray-100 rounded-lg">
-                      <MoreVertical className="w-5 h-5 text-gray-600" />
-                    </button>
-                    <button
-                      ref={buttonRefs.salesOverview}
-                      onClick={() => handleExpandBox('salesOverview')}
-                      className="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-600 transition-colors"
-                    >
-                      <Maximize2 className="w-5 h-5" />
-                    </button>
-                  </div>
+                  <p className="text-lg font-semibold text-[#212529]">$8,145.20</p>
                 </div>
-                <div className="h-64 flex items-end justify-between gap-4 mb-4">
-                  {/* Placeholder for chart bars */}
-                  <div className="flex-1 flex flex-col items-center">
-                    <div className="w-full bg-gradient-to-t from-purple-500 to-purple-300 rounded-t" style={{ height: '70%' }}></div>
-                    <p className="text-xs text-gray-500 mt-2">Oct</p>
-                    <p className="text-xs font-medium text-gray-700">$2,988.20</p>
+              </div>
+            </div>
+
+            {/* System Lock & Growth Rate Card */}
+            <div className="card p-4" data-tutorial="system-lock">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Lock className="w-4 h-4 text-[#6c757d]" />
+                  <span className="text-xs font-medium text-[#212529]">System Lock</span>
                   </div>
-                  <div className="flex-1 flex flex-col items-center">
-                    <div className="w-full bg-gradient-to-t from-purple-500 to-purple-300 rounded-t" style={{ height: '45%' }}></div>
-                    <p className="text-xs text-gray-500 mt-2">Nov</p>
-                    <p className="text-xs font-medium text-gray-700">$1,765.09</p>
-                  </div>
-                  <div className="flex-1 flex flex-col items-center">
-                    <div className="w-full bg-gradient-to-t from-purple-500 to-purple-300 rounded-t" style={{ height: '90%' }}></div>
-                    <p className="text-xs text-gray-500 mt-2">Dec</p>
-                    <p className="text-xs font-medium text-gray-700">$4,005.65</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4 text-xs">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-purple-600 rounded"></div>
-                    <span className="text-gray-600">China</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-purple-400 rounded"></div>
-                    <span className="text-gray-600">UE</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-blue-500 rounded"></div>
-                    <span className="text-gray-600">USA</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-teal-500 rounded"></div>
-                    <span className="text-gray-600">Canada</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-teal-300 rounded"></div>
-                    <span className="text-gray-600">Other</span>
+                <div className="relative w-12 h-12">
+                  <svg className="w-12 h-12 transform -rotate-90">
+                    <circle
+                      cx="24"
+                      cy="24"
+                      r="20"
+                      fill="none"
+                      stroke="#e9ecef"
+                      strokeWidth="4"
+                    />
+                    <circle
+                      cx="24"
+                      cy="24"
+                      r="20"
+                      fill="none"
+                      stroke="#ff6b35"
+                      strokeWidth="4"
+                      strokeDasharray={`${2 * Math.PI * 20 * 0.36} ${2 * Math.PI * 20}`}
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-xs font-medium text-[#212529]">36%</span>
                   </div>
                 </div>
               </div>
+              <p className="text-xs text-[#6c757d] mb-1">Growth rate</p>
+              <p className="text-xl font-semibold text-[#212529] mb-1">13 Days</p>
+              <p className="text-xs text-[#6c757d]">109 hours, 23 minutes</p>
+            </div>
 
-              {/* Total Subscriber Card */}
-              <div ref={boxRefs.totalSubscriber} className="bg-white rounded-xl p-6 shadow-sm">
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
-                      <UserCircle className="w-5 h-5 text-indigo-600" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900">Total Subscriber</h3>
-                    </div>
+            {/* Yearly Comparison Chart */}
+            <div className="card p-4" data-tutorial="yearly-chart">
+              <div className="flex items-center justify-between mb-3">
+                <BarChart3 className="w-4 h-4 text-[#6c757d]" />
+                <button className="card p-1 hover:bg-[#f8f9fa] transition-colors">
+                  <Maximize2 className="w-3 h-3 text-[#6c757d]" />
+                </button>
+              </div>
+              <p className="text-lg font-semibold text-[#212529] mb-4">$16,073.49</p>
+              <div className="h-24 flex items-end gap-2">
+                <div className="flex-1 bg-[#e9ecef] rounded-t" style={{ height: '40%' }}></div>
+                <div className="flex-1 bg-[#e9ecef] rounded-t" style={{ height: '60%' }}></div>
+                <div className="flex-1 bg-[#ff6b35] rounded-t" style={{ height: '80%' }}></div>
+                <div className="flex-1 bg-[#ff6b35] rounded-t" style={{ height: '100%' }}></div>
+              </div>
+              <div className="flex items-center gap-3 mt-2 text-xs">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 bg-[#6c757d] rounded-full"></div>
+                  <span className="text-[#6c757d]">2022</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 bg-[#ff6b35] rounded-full"></div>
+                  <span className="text-[#6c757d]">2023</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Second Row */}
+          <div className="grid grid-cols-5 gap-4 mt-4">
+            {/* Annual Profits */}
+            <div className="card p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-medium text-[#212529]">Annual profits</h3>
+                <select className="text-xs text-[#6c757d] bg-transparent border-0 focus:outline-none">
+                  <option>2023</option>
+                </select>
+              </div>
+              <div className="relative w-32 h-32 mx-auto">
+                <svg className="w-32 h-32">
+                  <circle cx="64" cy="64" r="60" fill="#fff5f0" />
+                  <circle cx="64" cy="64" r="45" fill="#ffe0d1" />
+                  <circle cx="64" cy="64" r="30" fill="#ffc9a8" />
+                  <circle cx="64" cy="64" r="15" fill="#ff6b35" />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-xs font-medium text-[#212529]">$4K</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Activity Manager */}
+            <div className="card p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-medium text-[#212529]">Activity manager</h3>
+                <div className="flex items-center gap-1">
+                  <button className="card p-1 hover:bg-[#f8f9fa] transition-colors">
+                    <MoreVertical className="w-3 h-3 text-[#6c757d]" />
+                  </button>
+                  <button className="card p-1 hover:bg-[#f8f9fa] transition-colors">
+                    <Maximize2 className="w-3 h-3 text-[#6c757d]" />
+                  </button>
+                  <button className="card p-1 hover:bg-[#f8f9fa] transition-colors">
+                    <Search className="w-3 h-3 text-[#6c757d]" />
+                  </button>
+                </div>
+              </div>
+              <div className="relative mb-3">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-[#6c757d]" />
+                <input
+                  type="text"
+                  placeholder="Search in activities..."
+                  className="input pl-7 text-xs py-1.5"
+                />
+              </div>
+              <div className="flex items-center gap-1.5 mb-3">
+                <span className="card px-2 py-0.5 text-xs text-[#6c757d] flex items-center gap-1">
+                  Team
+                  <X className="w-3 h-3" />
+                </span>
+                <span className="card px-2 py-0.5 text-xs text-[#6c757d] flex items-center gap-1">
+                  Insights
+                  <X className="w-3 h-3" />
+                </span>
+                <span className="card px-2 py-0.5 text-xs text-[#6c757d] flex items-center gap-1">
+                  Today
+                  <X className="w-3 h-3" />
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-[#212529]">$43.20 USD</span>
+                <div className="flex gap-0.5">
+                  <div className="w-1 h-6 bg-[#ff6b35] rounded"></div>
+                  <div className="w-1 h-4 bg-[#e9ecef] rounded"></div>
+                  <div className="w-1 h-8 bg-[#ff6b35] rounded"></div>
+                </div>
+              </div>
+                  </div>
+
+            {/* Business Plans */}
+            <div className="card p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-medium text-[#212529]">Business plans</h3>
+                <button className="card p-1 hover:bg-[#f8f9fa] transition-colors">
+                  <MoreVertical className="w-3 h-3 text-[#6c757d]" />
+                </button>
+                  </div>
+              <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                  <Building2 className="w-4 h-4 text-[#6c757d]" />
+                  <span className="text-xs text-[#212529]">Bank loans</span>
+                  <TrendingUp className="w-3 h-3 text-[#6c757d] ml-auto" />
                   </div>
                   <div className="flex items-center gap-2">
-                    <select className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                      <option>Weekly</option>
-                      <option>Monthly</option>
-                      <option>Yearly</option>
-                    </select>
-              <button
-                      ref={buttonRefs.totalSubscriber}
-                      onClick={() => handleExpandBox('totalSubscriber')}
-                      className="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                      <Maximize2 className="w-5 h-5" />
+                  <Calculator className="w-4 h-4 text-[#6c757d]" />
+                  <span className="text-xs text-[#212529]">Accounting</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                  <Users className="w-4 h-4 text-[#6c757d]" />
+                  <span className="text-xs text-[#212529]">HR management</span>
+                </div>
+              </div>
+                    </div>
+
+            {/* Wallet Verification */}
+            <div className="card p-4">
+              <div className="flex items-center justify-center mb-3">
+                <div className="w-12 h-12 rounded-full bg-[#fff5f0] flex items-center justify-center">
+                  <Wallet className="w-6 h-6 text-[#ff6b35]" />
+                    </div>
+                  </div>
+              <h3 className="text-sm font-medium text-[#212529] mb-1">Wallet Verification</h3>
+              <p className="text-xs text-[#6c757d] mb-3">Enable 2-step verification to secure your wallet.</p>
+              <button className="card px-4 py-2 bg-[#ff6b35] text-white text-xs font-medium hover:bg-[#e55a2b] transition-colors w-full">
+                Enable
               </button>
                   </div>
+
+            {/* Main Stocks & Review Rating */}
+            <div className="card p-4">
+              <div className="mb-4">
+                <div className="flex items-center justify-between mb-2">
+                  <LineChart className="w-4 h-4 text-[#6c757d]" />
+                  <button className="card p-1 hover:bg-[#f8f9fa] transition-colors">
+                    <X className="w-3 h-3 text-[#6c757d]" />
+                  </button>
                 </div>
-                <div className="mb-4">
-                  <div className="flex items-baseline gap-2 mb-1">
-                    <p className="text-2xl font-bold text-gray-900">24,473</p>
-                    <div className="flex items-center gap-1 text-sm">
-                      <span className="text-green-600 font-medium">8.3%</span>
-                      <ArrowUp className="w-4 h-4 text-green-600" />
-                    </div>
+                <div className="h-16 bg-[#f8f9fa] rounded mb-2 flex items-center justify-center">
+                  <div className="flex items-end gap-1">
+                    <div className="w-1 h-4 bg-[#6c757d] rounded"></div>
+                    <div className="w-1 h-6 bg-[#6c757d] rounded"></div>
+                    <div className="w-1 h-8 bg-[#ff6b35] rounded"></div>
+                    <div className="w-1 h-10 bg-[#ff6b35] rounded"></div>
                   </div>
-                  <p className="text-sm text-gray-500">+ 749 increased</p>
                 </div>
-                <div className="h-48 flex items-end justify-between gap-2">
-                  {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, index) => {
-                    const heights = [30, 45, 90, 50, 60, 40, 55]
-                    const isHighlight = day === 'Tue'
-                    return (
-                      <div key={day} className="flex-1 flex flex-col items-center">
-                        <div 
-                          className={`w-full rounded-t ${isHighlight ? 'bg-gradient-to-t from-indigo-600 to-indigo-400' : 'bg-gray-200'}`}
-                          style={{ height: `${heights[index]}%` }}
-                        >
-                          {isHighlight && (
-                            <div className="text-white text-xs font-medium p-1">3,874</div>
-                          )}
+                <p className="text-sm font-medium text-[#212529]">Main Stocks</p>
+                <p className="text-xs text-[#6c757d]">Extended & Limited</p>
+                <span className="text-xs text-green-600 font-medium">+9.3%</span>
                         </div>
-                        <p className="text-xs text-gray-500 mt-2">{day}</p>
+              
+              <div className="border-t border-[#e9ecef] pt-4">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-medium text-[#212529]">Review rating</h3>
+                  <MoreVertical className="w-3 h-3 text-[#6c757d]" />
                       </div>
-                    )
-                  })}
+                <p className="text-xs text-[#6c757d] mb-3">How is your business management going?</p>
+                <div className="flex items-center gap-2">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <button
+                      key={i}
+                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+                        i === 3 ? 'bg-[#ff6b35]' : 'bg-[#f8f9fa] hover:bg-[#e9ecef]'
+                      }`}
+                    >
+                      <Smile className={`w-4 h-4 ${i === 3 ? 'text-white' : 'text-[#6c757d]'}`} />
+                    </button>
+                  ))}
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-
-      {/* Expanded Box - Full Page */}
-      {expandedBox && currentBoxData && (
-        <div 
-          className="fixed overflow-hidden"
-          style={{
-            top: '64px',
-            left: '0',
-            right: '0',
-            bottom: '0',
-            width: '100%',
-            padding: '24px',
-            zIndex: 20,
-          }}
-        >
-          <div
-            className="bg-white rounded-xl p-12 shadow-2xl relative overflow-y-auto"
-            style={{
-              width: animationState === 'expanding' || animationState === 'idle'
-                ? `${expandedBoxSize.width || window.innerWidth - 48}px`
-                : `${boxPosition.width || 300}px`,
-              height: animationState === 'expanding' || animationState === 'idle'
-                ? `${expandedBoxSize.height || window.innerHeight - 112}px`
-                : `${boxPosition.height || 200}px`,
-              left: animationState === 'expanding' || animationState === 'idle'
-                ? '0'
-                : `${boxPosition.x - 24}px`, // Subtract container padding
-              top: animationState === 'expanding' || animationState === 'idle'
-                ? '0'
-                : `${boxPosition.y - 64 - 24}px`, // Subtract navbar height and container padding
-              position: 'absolute',
-              transition: animationState === 'expanding' || animationState === 'collapsing'
-                ? 'width 0.3s cubic-bezier(0.4, 0.0, 0.2, 1), height 0.3s cubic-bezier(0.4, 0.0, 0.2, 1), left 0.3s cubic-bezier(0.4, 0.0, 0.2, 1), top 0.3s cubic-bezier(0.4, 0.0, 0.2, 1)'
-                : 'none',
-            }}
-          >
-            <button
-              onClick={() => handleExpandBox(expandedBox)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors z-20"
-            >
-              <X className="w-6 h-6" />
-            </button>
-            
-            <div 
-              className="h-full transition-opacity duration-300"
-              style={{
-                opacity: animationState === 'expanding' ? 0 : animationState === 'collapsing' ? 0 : 1,
-              }}
-            >
-              {renderExpandedContent({
-                boxId: expandedBox,
-                title: currentBoxData.title,
-                value: currentBoxData.value,
-                change: currentBoxData.change,
-                changeType: currentBoxData.changeType,
-                iconBg: currentBoxData.iconBg,
-              })}
             </div>
           </div>
         </div>
-      )}
-
     </div>
   )
 }
