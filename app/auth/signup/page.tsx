@@ -187,12 +187,11 @@ export default function SignUpPage() {
       {/* Top-left Logo Container */}
       <div className="absolute top-10 left-10 z-20">
         <Image
-          src="/Branding/street-logo.svg"
+          src="/Branding/street-logo.png"
           alt="Logo"
           width={150}
           height={52}
           className="drop-shadow-lg"
-          style={{ filter: 'brightness(0) invert(1)' }}
         />
       </div>
 

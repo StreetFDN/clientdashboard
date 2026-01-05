@@ -200,7 +200,7 @@ export function redrawGlass(
       chromaticAberration,
     })}') blur(${blur}px) brightness(${brightness}) saturate(${saturate})`;
   } else {
-    glassBoxElement.style.webkitBackdropFilter = `blur(${width / 10}px) saturate(180%)`;
+    (glassBoxElement.style as any).webkitBackdropFilter = `blur(${width / 10}px) saturate(180%)`;
   }
 }
 

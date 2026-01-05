@@ -382,14 +382,11 @@ export default function DashboardNavbar({ pageTitle, user, logoSize = 42, sideba
                 }}
               >
                 <Image
-                  src="/Branding/street-logo-only.svg"
+                  src="/Branding/street-logo2.png"
                   alt="Logo"
                   width={logoSize}
                   height={logoSize}
                   className="drop-shadow-lg"
-                  style={{ 
-                    filter: 'brightness(0)'
-                  }}
                 />
               </div>
               {/* Title - adjustable X position */}

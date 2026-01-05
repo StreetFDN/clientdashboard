@@ -110,10 +110,7 @@ export default function SignalUpdatePage() {
 
   return (
     <div className={`min-h-screen ${inter.className} relative page-transition`} style={{ backgroundColor: 'transparent' }}>
-      <NavigationBox 
-        onBoxBlurChange={setBoxBlur}
-        onBoxRefractionChange={setBoxRefraction}
-      />
+      <NavigationBox />
       <DashboardSidebar isOpen={sidebarOpen} />
       <DashboardNavbar 
         pageTitle="Signal Update" 
