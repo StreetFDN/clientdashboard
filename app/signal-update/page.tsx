@@ -15,10 +15,6 @@ export default function SignalUpdatePage() {
   // Slider values for boxes (4 boxes)
   const [boxBlur, setBoxBlur] = useState(0.0)
   const [boxRefraction, setBoxRefraction] = useState(200)
-  
-  // Slider values for navbar
-  const [navbarBlur, setNavbarBlur] = useState(1.0)
-  const [navbarRefraction, setNavbarRefraction] = useState(20)
 
   const videoRef = useRef<HTMLVideoElement>(null)
   
@@ -117,8 +113,6 @@ export default function SignalUpdatePage() {
       <NavigationBox 
         onBoxBlurChange={setBoxBlur}
         onBoxRefractionChange={setBoxRefraction}
-        onNavbarBlurChange={setNavbarBlur}
-        onNavbarRefractionChange={setNavbarRefraction}
       />
       <DashboardSidebar isOpen={sidebarOpen} />
       <DashboardNavbar 
@@ -126,8 +120,6 @@ export default function SignalUpdatePage() {
         logoSize={200} 
         sidebarOpen={sidebarOpen}
         onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-        navbarBlur={navbarBlur}
-        navbarRefraction={navbarRefraction}
       />
 
       {/* Video Background - Static at top, always full screen */}
