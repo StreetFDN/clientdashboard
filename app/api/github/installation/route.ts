@@ -63,7 +63,15 @@ export async function GET(request: NextRequest) {
       })
       
       if (!clientsResponse.ok) {
-        // If can't get clients, return not installed
+        // If 401, the user might not exist in backend yet
+        // This is fine - they'll be created on first API call
+        if (clientsResponse.status === 401) {
+          return NextResponse.json({
+            installed: false,
+            install_url: GITHUB_APP_INSTALL_URL || `https://github.com/apps/${GITHUB_APP_ID}/installations/new`,
+          }, { status: 200 })
+        }
+        // For other errors, return not installed
         return NextResponse.json({
           installed: false,
           install_url: GITHUB_APP_INSTALL_URL || `https://github.com/apps/${GITHUB_APP_ID}/installations/new`,
@@ -74,6 +82,8 @@ export async function GET(request: NextRequest) {
       
       if (!clients || clients.length === 0) {
         // No clients = no installation
+        // Note: If user just installed the app, the webhook might still be processing
+        // The frontend polling will catch it on the next check
         return NextResponse.json({
           installed: false,
           install_url: GITHUB_APP_INSTALL_URL || `https://github.com/apps/${GITHUB_APP_ID}/installations/new`,
