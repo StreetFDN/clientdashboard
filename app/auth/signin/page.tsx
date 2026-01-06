@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react'
+import { getAuthRedirectUrl } from '@/lib/auth-utils'
 
 export default function SignInPage() {
   const router = useRouter()
@@ -54,7 +55,7 @@ export default function SignInPage() {
       const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: getAuthRedirectUrl('/auth/callback'),
         },
       })
 
