@@ -8,13 +8,16 @@ export function getAuthRedirectUrl(path: string = '/auth/callback'): string {
   const envUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL
   
   // Always log for debugging (helps identify the issue)
-  console.log('[Auth] getAuthRedirectUrl called:', {
-    envUrl,
-    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
-    NEXTAUTH_URL: process.env.NEXTAUTH_URL,
-    path,
-    windowOrigin: typeof window !== 'undefined' ? window.location.origin : 'N/A (server)',
-  })
+  if (typeof window !== 'undefined') {
+    console.log('[Auth] getAuthRedirectUrl called (client):', {
+      envUrl,
+      NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+      NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+      path,
+      windowOrigin: window.location.origin,
+      windowHref: window.location.href,
+    })
+  }
   
   if (envUrl) {
     // Remove trailing slash if present
