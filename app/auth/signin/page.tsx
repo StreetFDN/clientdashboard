@@ -52,10 +52,18 @@ export default function SignInPage() {
     setError(null)
 
     try {
+      const redirectUrl = getAuthRedirectUrl('/auth/callback')
+      console.log('[OAuth] Redirect URL:', redirectUrl)
+      console.log('[OAuth] Current origin:', typeof window !== 'undefined' ? window.location.origin : 'N/A')
+      console.log('[OAuth] Env vars:', {
+        NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+        NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+      })
+      
       const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo: getAuthRedirectUrl('/auth/callback'),
+          redirectTo: redirectUrl,
         },
       })
 

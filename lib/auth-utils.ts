@@ -10,12 +10,27 @@ export function getAuthRedirectUrl(path: string = '/auth/callback'): string {
   if (envUrl) {
     // Remove trailing slash if present
     const baseUrl = envUrl.replace(/\/$/, '')
-    return `${baseUrl}${path}`
+    const fullUrl = `${baseUrl}${path}`
+    
+    // Debug logging (remove in production if needed)
+    if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+      console.log('[Auth] Using redirect URL:', fullUrl, 'from env:', envUrl)
+    }
+    
+    return fullUrl
   }
 
-  // In client-side, fallback to current origin
+  // In client-side, use current origin (this should be production URL if on production)
   if (typeof window !== 'undefined') {
-    return `${window.location.origin}${path}`
+    const currentOrigin = window.location.origin
+    const fullUrl = `${currentOrigin}${path}`
+    
+    // Debug logging
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[Auth] Using redirect URL from window.location.origin:', fullUrl)
+    }
+    
+    return fullUrl
   }
 
   // Server-side fallback
