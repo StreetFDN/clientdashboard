@@ -15,6 +15,7 @@ function DevUpdateContent() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [errorData, setErrorData] = useState<{ message?: string; authUrl?: string } | null>(null)
   const [summary, setSummary] = useState<GitHubActivitySummary | null>(null)
   const [period, setPeriod] = useState<'week' | 'month' | 'all'>('week')
   const [showSuccess, setShowSuccess] = useState(false)
@@ -30,11 +31,13 @@ function DevUpdateContent() {
       
       if (!response.ok) {
         const errorData = await response.json()
+        setErrorData(errorData)
         throw new Error(errorData.message || 'Failed to fetch activity')
       }
       
       const data = await response.json()
       setSummary(data)
+      setErrorData(null)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load GitHub activity')
       console.error('Error fetching GitHub activity:', err)
@@ -163,9 +166,24 @@ function DevUpdateContent() {
             <div className="card p-4 mb-6 bg-red-900/20 border border-red-800/50">
               <div className="flex items-center gap-3">
                 <Github className="w-5 h-5 text-red-400" />
-                <div>
+                <div className="flex-1">
                   <p className="text-sm font-medium text-red-400">Failed to load activity</p>
                   <p className="text-xs text-red-300 mt-1">{error}</p>
+                  {errorData?.authUrl && (
+                    <div className="mt-3">
+                      <p className="text-xs text-red-200 mb-2">
+                        The backend requires separate GitHub OAuth authentication. Click below to authenticate:
+                      </p>
+                      <a
+                        href={errorData.authUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-block px-4 py-2 bg-[#0066cc] text-white text-xs font-medium rounded-lg hover:bg-[#0052a3] transition-colors"
+                      >
+                        Authenticate with Backend
+                      </a>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

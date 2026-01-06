@@ -48,9 +48,12 @@ export async function GET(request: NextRequest) {
       : `https://${GITHUB_BACKEND_URL}`
     
     // Forward cookies for authentication
+    // Note: Backend uses GitHub OAuth sessions, not Supabase
+    // We need to forward the session cookie from the backend
     const cookieHeader = request.headers.get('cookie') || ''
     
     // Step 1: Get user's clients
+    // The backend requires GitHub OAuth session authentication
     const clientsResponse = await fetch(`${backendUrl}/api/clients`, {
       method: 'GET',
       headers: {
@@ -62,6 +65,22 @@ export async function GET(request: NextRequest) {
     })
     
     if (!clientsResponse.ok) {
+      if (clientsResponse.status === 401) {
+        // User needs to authenticate with backend's GitHub OAuth
+        return NextResponse.json({
+          error: 'Backend authentication required',
+          message: 'Please authenticate with the backend first. The backend uses GitHub OAuth, which is separate from Supabase authentication.',
+          authUrl: `${backendUrl}/api/auth/github`,
+          activities: [],
+          summary: {
+            total_activities: 0,
+            commits: 0,
+            pull_requests: 0,
+            issues: 0,
+            releases: 0,
+          },
+        }, { status: 401 })
+      }
       throw new Error(`Failed to fetch clients: ${clientsResponse.status}`)
     }
     
