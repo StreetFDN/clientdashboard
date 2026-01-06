@@ -47,6 +47,7 @@ export interface GitHubActivitySummary {
 export interface GitHubAppInstallation {
   installed: boolean
   installation_id?: string
+  install_url?: string
   account?: {
     login: string
     type: string

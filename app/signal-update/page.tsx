@@ -114,7 +114,6 @@ export default function SignalUpdatePage() {
       <DashboardSidebar isOpen={sidebarOpen} />
       <DashboardNavbar 
         pageTitle="Signal Update" 
-        logoSize={200} 
         sidebarOpen={sidebarOpen}
         onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
       />

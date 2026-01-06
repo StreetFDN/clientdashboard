@@ -114,7 +114,6 @@ export default function ExecutionUpdatePage() {
       <DashboardSidebar isOpen={sidebarOpen} />
       <DashboardNavbar 
         pageTitle="Execution Update" 
-        logoSize={200} 
         sidebarOpen={sidebarOpen}
         onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
       />

@@ -1,5 +1,6 @@
 import { Activity, TrendingUp, BarChart3, UserCircle, ArrowUp, ArrowDown } from 'lucide-react'
-import type { BoxId } from './page'
+
+export type BoxId = 'pageViews' | 'totalRevenue' | 'bounceRate' | 'salesOverview' | 'totalSubscriber'
 
 interface ExpandedContentProps {
   boxId: BoxId
