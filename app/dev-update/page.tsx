@@ -58,6 +58,10 @@ function DevUpdateContent() {
       // Refresh activity after installation
       fetchActivity()
     }
+    if (searchParams.get('github_connected') === 'true') {
+      // GitHub account was just connected, refresh the page to show install button
+      window.location.href = '/dev-update'
+    }
     if (searchParams.get('error')) {
       setError(searchParams.get('error') || 'An error occurred')
     }
