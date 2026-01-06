@@ -55,37 +55,57 @@ export default function GitHubAppInstall({ onInstallComplete, compact = false }:
     )
 
     // Listen for installation completion
+    // Poll more frequently at first, then slow down
+    let pollCount = 0
+    const maxPolls = 60 // 2 minutes total (60 * 2s)
+    
     const checkInterval = setInterval(async () => {
+      pollCount++
       try {
+        // Force a fresh check by calling checkInstallation
+        await checkInstallation()
+        
+        // Check if installation is now detected
         const response = await fetch('/api/github/installation', {
           credentials: 'include',
+          cache: 'no-store', // Don't cache, always get fresh data
         })
         
         if (response.ok) {
           const data = await response.json()
-          setInstallation(data)
           
           if (data.installed) {
             clearInterval(checkInterval)
             setInstalling(false)
+            setInstallation(data)
             if (installWindow) {
               installWindow.close()
             }
             if (onInstallComplete) {
               onInstallComplete()
             }
+          } else {
+            // Update state even if not installed yet (for UI feedback)
+            setInstallation(data)
           }
         }
       } catch (err) {
         console.error('Error checking installation:', err)
       }
-    }, 2000)
+      
+      // Stop polling after max attempts
+      if (pollCount >= maxPolls) {
+        clearInterval(checkInterval)
+        setInstalling(false)
+        setError('Installation check timed out. Please refresh the page.')
+      }
+    }, 2000) // Check every 2 seconds
 
-    // Cleanup after 5 minutes
+    // Cleanup after max time
     setTimeout(() => {
       clearInterval(checkInterval)
       setInstalling(false)
-    }, 300000)
+    }, 120000) // 2 minutes total
   }
 
   if (loading) {
