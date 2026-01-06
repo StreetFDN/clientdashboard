@@ -1,9 +1,35 @@
 'use client'
 
+import { useEffect, Suspense } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 
-export default function Home() {
+function HomeContent() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const code = searchParams.get('code')
+
+  // Handle OAuth callback if code is present
+  useEffect(() => {
+    if (code) {
+      // Redirect to the proper callback route
+      router.replace(`/auth/callback?code=${code}`)
+    }
+  }, [code, router])
+
+  // Show loading state while redirecting
+  if (code) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen p-6 bg-[#262624]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0066cc] mx-auto mb-4"></div>
+          <p className="text-sm text-[#d4d4d1]">Completing sign in...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-6 relative page-transition bg-[#f8f9fa]">
       {/* Top-left Logo */}
@@ -45,5 +71,20 @@ export default function Home() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={
+      <div className="flex flex-col items-center justify-center min-h-screen p-6 bg-[#262624]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0066cc] mx-auto mb-4"></div>
+          <p className="text-sm text-[#d4d4d1]">Loading...</p>
+        </div>
+      </div>
+    }>
+      <HomeContent />
+    </Suspense>
   )
 }
