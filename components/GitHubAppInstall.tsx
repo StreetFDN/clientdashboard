@@ -30,15 +30,21 @@ export default function GitHubAppInstall({ onInstallComplete, compact = false }:
       const { data: { user } } = await supabase.auth.getUser()
       
       if (user) {
-        // Check if user has GitHub provider linked by checking app_metadata
+        // Check if user has GitHub provider linked
         // Users who sign in with GitHub OAuth will have provider: 'github' in app_metadata
-        const hasGithub = user.app_metadata?.provider === 'github' || 
-                         user.app_metadata?.providers?.includes('github') ||
-                         user.identities?.some((identity: any) => identity.provider === 'github')
+        // Or we can check identities array if available
+        const hasGithub = 
+          user.app_metadata?.provider === 'github' || 
+          (user.identities && Array.isArray(user.identities) && 
+           user.identities.some((identity: any) => identity.provider === 'github'))
+        
         setGithubConnected(!!hasGithub)
+      } else {
+        setGithubConnected(false)
       }
     } catch (err) {
       console.error('Error checking GitHub connection:', err)
+      setGithubConnected(false)
     } finally {
       setCheckingConnection(false)
     }
