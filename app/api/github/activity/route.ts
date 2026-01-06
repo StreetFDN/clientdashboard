@@ -47,17 +47,20 @@ export async function GET(request: NextRequest) {
       ? GITHUB_BACKEND_URL 
       : `https://${GITHUB_BACKEND_URL}`
     
-    // Forward cookies for authentication
-    // Note: Backend uses GitHub OAuth sessions, not Supabase
-    // We need to forward the session cookie from the backend
+    // Get Supabase JWT token to send to backend
+    const { data: { session } } = await supabase.auth.getSession()
+    const supabaseToken = session?.access_token
+    
+    // Forward cookies for backward compatibility (session auth)
     const cookieHeader = request.headers.get('cookie') || ''
     
     // Step 1: Get user's clients
-    // The backend requires GitHub OAuth session authentication
+    // Try Supabase JWT first, fallback to session cookies
     const clientsResponse = await fetch(`${backendUrl}/api/clients`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
+        ...(supabaseToken ? { 'Authorization': `Bearer ${supabaseToken}` } : {}),
         'Cookie': cookieHeader,
       },
       credentials: 'include',
@@ -114,6 +117,7 @@ export async function GET(request: NextRequest) {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
+        ...(supabaseToken ? { 'Authorization': `Bearer ${supabaseToken}` } : {}),
         'Cookie': cookieHeader,
       },
       credentials: 'include',
