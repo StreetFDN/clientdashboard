@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
 
 // This endpoint fetches GitHub activity from the street-client backend
 // You'll need to configure the backend URL in your environment variables
@@ -7,6 +8,26 @@ const GITHUB_BACKEND_URL = process.env.GITHUB_BACKEND_URL || 'https://api.street
 
 export async function GET(request: NextRequest) {
   try {
+    // Create server-side Supabase client
+    const cookieStore = await cookies()
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value
+          },
+          set(name: string, value: string, options: any) {
+            cookieStore.set({ name, value, ...options })
+          },
+          remove(name: string, options: any) {
+            cookieStore.set({ name, value: '', ...options })
+          },
+        },
+      }
+    )
+
     // Verify user is authenticated
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     
@@ -23,11 +44,21 @@ export async function GET(request: NextRequest) {
     const repository = searchParams.get('repository') // optional filter
 
     // Fetch from street-client backend
-    const url = new URL(`${GITHUB_BACKEND_URL}/activity`)
+    // Ensure URL has protocol
+    const backendUrl = GITHUB_BACKEND_URL.startsWith('http') 
+      ? GITHUB_BACKEND_URL 
+      : `https://${GITHUB_BACKEND_URL}`
+    
+    // Try different endpoint paths - your backend might use a different path
+    const endpointPath = '/github/activity' // Try this first, or '/api/github/activity', or '/activity'
+    const url = new URL(`${backendUrl}${endpointPath}`)
     url.searchParams.set('period', period)
     if (repository) {
       url.searchParams.set('repository', repository)
     }
+
+    console.log('[GitHub Activity] Fetching from:', url.toString())
+    console.log('[GitHub Activity] Backend URL env:', GITHUB_BACKEND_URL)
 
     const response = await fetch(url.toString(), {
       method: 'GET',

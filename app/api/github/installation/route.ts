@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
 
 // GitHub App configuration
 const GITHUB_APP_ID = process.env.GITHUB_APP_ID || ''
@@ -7,17 +8,57 @@ const GITHUB_APP_INSTALL_URL = process.env.GITHUB_APP_INSTALL_URL || ''
 
 export async function GET(request: NextRequest) {
   try {
+    // Create server-side Supabase client
+    const cookieStore = await cookies()
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value
+          },
+          set(name: string, value: string, options: any) {
+            cookieStore.set({ name, value, ...options })
+          },
+          remove(name: string, options: any) {
+            cookieStore.set({ name, value: '', ...options })
+          },
+        },
+      }
+    )
+
     // Verify user is authenticated
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     
+    // Log cookie info for debugging
+    const cookieNames = cookieStore.getAll().map(c => c.name)
+    console.log('[GitHub Installation] Auth check:', {
+      hasUser: !!user,
+      authError: authError?.message,
+      userId: user?.id,
+      cookieCount: cookieNames.length,
+      hasAuthCookies: cookieNames.some(name => name.includes('supabase') || name.includes('auth')),
+    })
+    
     if (authError || !user) {
+      console.error('[GitHub Installation] Auth failed:', {
+        error: authError?.message,
+        code: authError?.status,
+        cookies: cookieNames,
+      })
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { 
+          error: 'Unauthorized', 
+          message: authError?.message || 'Not authenticated. Please log in and try again.',
+          hint: 'Make sure you are logged in and cookies are enabled.'
+        },
         { status: 401 }
       )
     }
 
     // Check if user has GitHub installation stored
+    console.log('[GitHub Installation] Checking database for user:', user.id)
     const { data: installation, error: dbError } = await supabase
       .from('github_installations')
       .select('*')
@@ -65,6 +106,26 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // Create server-side Supabase client
+    const cookieStore = await cookies()
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value
+          },
+          set(name: string, value: string, options: any) {
+            cookieStore.set({ name, value, ...options })
+          },
+          remove(name: string, options: any) {
+            cookieStore.set({ name, value: '', ...options })
+          },
+        },
+      }
+    )
+
     // Verify user is authenticated
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     

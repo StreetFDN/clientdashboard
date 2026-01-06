@@ -22,7 +22,9 @@ export default function GitHubAppInstall({ onInstallComplete, compact = false }:
   const checkInstallation = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/github/installation')
+      const response = await fetch('/api/github/installation', {
+        credentials: 'include', // Ensure cookies are sent
+      })
       
       if (!response.ok) {
         throw new Error('Failed to check installation status')

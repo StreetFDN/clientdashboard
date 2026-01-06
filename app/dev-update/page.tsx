@@ -24,7 +24,9 @@ function DevUpdateContent() {
       setLoading(true)
       setError(null)
       
-      const response = await fetch(`/api/github/activity?period=${period}`)
+      const response = await fetch(`/api/github/activity?period=${period}`, {
+        credentials: 'include', // Ensure cookies are sent
+      })
       
       if (!response.ok) {
         const errorData = await response.json()
