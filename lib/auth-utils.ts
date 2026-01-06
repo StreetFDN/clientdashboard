@@ -7,16 +7,21 @@ export function getAuthRedirectUrl(path: string = '/auth/callback'): string {
   // NEXT_PUBLIC_ variables are available in client-side code
   const envUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL
   
+  // Always log for debugging (helps identify the issue)
+  console.log('[Auth] getAuthRedirectUrl called:', {
+    envUrl,
+    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+    NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+    path,
+    windowOrigin: typeof window !== 'undefined' ? window.location.origin : 'N/A (server)',
+  })
+  
   if (envUrl) {
     // Remove trailing slash if present
     const baseUrl = envUrl.replace(/\/$/, '')
     const fullUrl = `${baseUrl}${path}`
     
-    // Debug logging (remove in production if needed)
-    if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-      console.log('[Auth] Using redirect URL:', fullUrl, 'from env:', envUrl)
-    }
-    
+    console.log('[Auth] Using redirect URL from env:', fullUrl)
     return fullUrl
   }
 
@@ -25,15 +30,12 @@ export function getAuthRedirectUrl(path: string = '/auth/callback'): string {
     const currentOrigin = window.location.origin
     const fullUrl = `${currentOrigin}${path}`
     
-    // Debug logging
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[Auth] Using redirect URL from window.location.origin:', fullUrl)
-    }
-    
+    console.log('[Auth] Using redirect URL from window.location.origin:', fullUrl)
     return fullUrl
   }
 
   // Server-side fallback
+  console.warn('[Auth] No env URL found, using localhost fallback')
   return `http://localhost:3000${path}`
 }
 

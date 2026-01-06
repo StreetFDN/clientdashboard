@@ -8,11 +8,25 @@ import { cookies } from 'next/headers'
  */
 function getBaseUrl(request: NextRequest): string {
   const envUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL
+  
+  // Log for debugging
+  console.log('[Callback] Environment check:', {
+    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+    NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+    requestOrigin: request.nextUrl.origin,
+    requestHost: request.headers.get('host'),
+  })
+  
   if (envUrl) {
-    return envUrl.replace(/\/$/, '') // Remove trailing slash
+    const baseUrl = envUrl.replace(/\/$/, '') // Remove trailing slash
+    console.log('[Callback] Using base URL from env:', baseUrl)
+    return baseUrl
   }
+  
   // Fallback to request origin (for local development)
-  return request.nextUrl.origin
+  const fallback = request.nextUrl.origin
+  console.log('[Callback] Using fallback origin:', fallback)
+  return fallback
 }
 
 export async function GET(request: NextRequest) {
