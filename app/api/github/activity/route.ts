@@ -69,11 +69,11 @@ export async function GET(request: NextRequest) {
     
     if (!clientsResponse.ok) {
       if (clientsResponse.status === 401) {
-        // User needs to authenticate with backend's GitHub OAuth
+        // Backend authentication failed - could be missing Supabase env vars or token issue
+        const errorText = await clientsResponse.text().catch(() => clientsResponse.statusText)
         return NextResponse.json({
-          error: 'Backend authentication required',
-          message: 'Please authenticate with the backend first. The backend uses GitHub OAuth, which is separate from Supabase authentication.',
-          authUrl: `${backendUrl}/api/auth/github`,
+          error: 'Backend authentication failed',
+          message: 'Unable to authenticate with backend. Please check that Supabase credentials are configured in the backend.',
           activities: [],
           summary: {
             total_activities: 0,

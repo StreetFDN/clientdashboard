@@ -169,20 +169,8 @@ function DevUpdateContent() {
                 <div className="flex-1">
                   <p className="text-sm font-medium text-red-400">Failed to load activity</p>
                   <p className="text-xs text-red-300 mt-1">{error}</p>
-                  {errorData?.authUrl && (
-                    <div className="mt-3">
-                      <p className="text-xs text-red-200 mb-2">
-                        The backend requires separate GitHub OAuth authentication. Click below to authenticate:
-                      </p>
-                      <a
-                        href={errorData.authUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-block px-4 py-2 bg-[#0066cc] text-white text-xs font-medium rounded-lg hover:bg-[#0052a3] transition-colors"
-                      >
-                        Authenticate with Backend
-                      </a>
-                    </div>
+                  {errorData?.message && (
+                    <p className="text-xs text-red-200 mt-2">{errorData.message}</p>
                   )}
                 </div>
               </div>
