@@ -1,21 +1,41 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { supabase } from '@/lib/supabase'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react'
 import { getAuthRedirectUrl } from '@/lib/auth-utils'
 
-export default function SignInPage() {
+function SignInPageContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
+
+  // Check for error from OAuth callback
+  useEffect(() => {
+    const errorParam = searchParams.get('error')
+    const errorDesc = searchParams.get('error_description')
+    const errorMsg = searchParams.get('message')
+    
+    if (errorParam) {
+      if (errorParam === 'session_expired' && errorMsg) {
+        setError(errorMsg)
+      } else if (errorParam === 'flow_state_not_found') {
+        setError('Your login session expired. Please try signing in again.')
+      } else if (errorDesc) {
+        setError(errorDesc.replace(/\+/g, ' '))
+      } else {
+        setError('An error occurred during authentication. Please try again.')
+      }
+    }
+  }, [searchParams])
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -216,6 +236,21 @@ export default function SignInPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex flex-col items-center justify-center min-h-screen p-6 page-transition bg-[#262624]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0066cc] mx-auto mb-4"></div>
+          <p className="text-sm text-[#d4d4d1]">Loading...</p>
+        </div>
+      </div>
+    }>
+      <SignInPageContent />
+    </Suspense>
   )
 }
 
