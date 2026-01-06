@@ -31,34 +31,14 @@ export async function GET(request: NextRequest) {
     // Verify user is authenticated
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     
-    // Log cookie info for debugging
-    const cookieNames = cookieStore.getAll().map(c => c.name)
-    console.log('[GitHub Installation] Auth check:', {
-      hasUser: !!user,
-      authError: authError?.message,
-      userId: user?.id,
-      cookieCount: cookieNames.length,
-      hasAuthCookies: cookieNames.some(name => name.includes('supabase') || name.includes('auth')),
-    })
-    
     if (authError || !user) {
-      console.error('[GitHub Installation] Auth failed:', {
-        error: authError?.message,
-        code: authError?.status,
-        cookies: cookieNames,
-      })
       return NextResponse.json(
-        { 
-          error: 'Unauthorized', 
-          message: authError?.message || 'Not authenticated. Please log in and try again.',
-          hint: 'Make sure you are logged in and cookies are enabled.'
-        },
+        { error: 'Unauthorized', message: authError?.message || 'Not authenticated' },
         { status: 401 }
       )
     }
 
     // Check if user has GitHub installation stored
-    console.log('[GitHub Installation] Checking database for user:', user.id)
     const { data: installation, error: dbError } = await supabase
       .from('github_installations')
       .select('*')
@@ -69,6 +49,10 @@ export async function GET(request: NextRequest) {
     if (dbError) {
       if (dbError.code === 'PGRST116') {
         // No rows returned - this is fine, user hasn't installed yet
+        return NextResponse.json({
+          installed: false,
+          install_url: GITHUB_APP_INSTALL_URL || `https://github.com/apps/${GITHUB_APP_ID}/installations/new`,
+        }, { status: 200 })
       } else if (dbError.code === '42P01' || dbError.message?.includes('does not exist')) {
         // Table doesn't exist - return helpful error
         return NextResponse.json(

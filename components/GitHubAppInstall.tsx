@@ -54,18 +54,26 @@ export default function GitHubAppInstall({ onInstallComplete, compact = false }:
       'width=800,height=600,scrollbars=yes'
     )
 
-    // Listen for installation completion (you may need to implement a callback endpoint)
+    // Listen for installation completion
     const checkInterval = setInterval(async () => {
       try {
-        await checkInstallation()
-        if (installation?.installed) {
-          clearInterval(checkInterval)
-          setInstalling(false)
-          if (installWindow) {
-            installWindow.close()
-          }
-          if (onInstallComplete) {
-            onInstallComplete()
+        const response = await fetch('/api/github/installation', {
+          credentials: 'include',
+        })
+        
+        if (response.ok) {
+          const data = await response.json()
+          setInstallation(data)
+          
+          if (data.installed) {
+            clearInterval(checkInterval)
+            setInstalling(false)
+            if (installWindow) {
+              installWindow.close()
+            }
+            if (onInstallComplete) {
+              onInstallComplete()
+            }
           }
         }
       } catch (err) {
