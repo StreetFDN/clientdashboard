@@ -1,12 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
 import type { User } from '@supabase/supabase-js'
-import { Menu, Search, User as UserIcon, LogOut } from 'lucide-react'
+import { Menu, Search, User as UserIcon, LogOut, Settings } from 'lucide-react'
 
 interface DashboardNavbarProps {
   pageTitle: string
@@ -23,6 +23,25 @@ export default function DashboardNavbar({
 }: DashboardNavbarProps) {
   const router = useRouter()
   const [searchFocused, setSearchFocused] = useState(false)
+  const [canManageTeam, setCanManageTeam] = useState(false)
+
+  useEffect(() => {
+    const checkTeamAccess = async () => {
+      if (!user) return
+      
+      try {
+        const response = await fetch('/api/user/team-members')
+        if (response.ok) {
+          setCanManageTeam(true)
+        }
+      } catch (error) {
+        // User doesn't have access to manage team
+        setCanManageTeam(false)
+      }
+    }
+
+    checkTeamAccess()
+  }, [user])
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -47,7 +66,7 @@ export default function DashboardNavbar({
             
             <Link href="/dashboard" className="flex items-center gap-2.5">
               <Image
-                src="/Branding/street-logo4.png"
+                src="/Branding/street-logo.png"
                 alt="Logo"
                 width={60}
                 height={21}
@@ -74,7 +93,7 @@ export default function DashboardNavbar({
             </div>
           </div>
 
-          {/* Right: User, Sign Out */}
+          {/* Right: User, Settings, Sign Out */}
           <div className="flex items-center gap-2">
             {user && (
               <div className="flex items-center gap-2 px-3 py-1.5">
@@ -85,6 +104,15 @@ export default function DashboardNavbar({
                    'User'}
                 </span>
               </div>
+            )}
+            {canManageTeam && (
+              <Link
+                href="/settings"
+                className="card p-1.5 hover:bg-[#3a3a38] transition-colors"
+                aria-label="Settings"
+              >
+                <Settings className="w-4 h-4 text-[#d4d4d1]" />
+              </Link>
             )}
             <button
               className="card p-1.5 hover:bg-[#3a3a38] transition-colors"

@@ -105,6 +105,15 @@ html {
     @apply transition-all duration-200;
   }
 
+  /* Select dropdowns */
+  select {
+    @apply bg-[#30302E] text-[#FAF9F6];
+  }
+
+  select option {
+    @apply bg-[#30302E] text-[#FAF9F6];
+  }
+
   /* Tutorial overlay */
   .tutorial-overlay {
     @apply fixed inset-0 z-50;

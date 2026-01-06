@@ -29,20 +29,24 @@ export default function Tutorial({ steps, onComplete }: TutorialProps) {
 
     const step = steps[currentStep]
     
-    // Wait a bit for DOM to be ready
+    // Find element immediately
     const findElement = () => {
       const element = document.querySelector(step.targetSelector) as HTMLElement
 
       if (element) {
         setElementFound(true)
+        // Get initial position
+        const rect = element.getBoundingClientRect()
+        setHighlightRect(rect)
+        
         // Scroll element into view
         element.scrollIntoView({ behavior: 'smooth', block: 'center' })
         
-        // Update highlight position after scroll
+        // Update highlight position after scroll completes
         setTimeout(() => {
-          const rect = element.getBoundingClientRect()
-          setHighlightRect(rect)
-        }, 300)
+          const updatedRect = element.getBoundingClientRect()
+          setHighlightRect(updatedRect)
+        }, 500)
       } else {
         setElementFound(false)
         // If element not found, show tutorial card in center
@@ -57,9 +61,11 @@ export default function Tutorial({ steps, onComplete }: TutorialProps) {
       }
     }
 
-    // Try immediately and also after a short delay
+    // Try immediately
     findElement()
-    const timeout = setTimeout(findElement, 100)
+    
+    // Also try after a short delay in case DOM isn't ready
+    const timeout = setTimeout(findElement, 50)
     
     return () => clearTimeout(timeout)
   }, [currentStep, steps, onComplete])
@@ -115,65 +121,121 @@ export default function Tutorial({ steps, onComplete }: TutorialProps) {
 
   return (
     <>
-      {/* Dark overlay */}
-      <div
-        ref={overlayRef}
-        className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm transition-opacity duration-300"
-        onClick={handleSkip}
-      />
-
-      {/* Highlight box with ring - only show if element found */}
-      {highlightRect && elementFound && (
+      {/* Dark overlay with cutout for highlighted element */}
+      {highlightRect && elementFound ? (
+        <>
+          {/* Top overlay */}
+          {highlightRect.top > 0 && (
+            <div
+              className="fixed z-50 bg-black/60 backdrop-blur-sm transition-all duration-300"
+              style={{
+                top: 0,
+                left: 0,
+                right: 0,
+                height: highlightRect.top - 8,
+              }}
+              onClick={handleSkip}
+            />
+          )}
+          {/* Left overlay */}
+          {highlightRect.left > 8 && (
+            <div
+              className="fixed z-50 bg-black/60 backdrop-blur-sm transition-all duration-300"
+              style={{
+                top: Math.max(0, highlightRect.top - 8),
+                left: 0,
+                width: highlightRect.left - 8,
+                height: highlightRect.height + 16,
+              }}
+              onClick={handleSkip}
+            />
+          )}
+          {/* Right overlay */}
+          {highlightRect.right < window.innerWidth && (
+            <div
+              className="fixed z-50 bg-black/60 backdrop-blur-sm transition-all duration-300"
+              style={{
+                top: Math.max(0, highlightRect.top - 8),
+                left: highlightRect.right + 8,
+                right: 0,
+                height: highlightRect.height + 16,
+              }}
+              onClick={handleSkip}
+            />
+          )}
+          {/* Bottom overlay */}
+          {highlightRect.bottom < window.innerHeight && (
+            <div
+              className="fixed z-50 bg-black/60 backdrop-blur-sm transition-all duration-300"
+              style={{
+                top: highlightRect.bottom + 8,
+                left: 0,
+                right: 0,
+                bottom: 0,
+              }}
+              onClick={handleSkip}
+            />
+          )}
+          {/* Highlight box with ring */}
+          <div
+            className="fixed z-[51] border-4 border-[#0066cc] rounded-lg pointer-events-none transition-all duration-300 ease-out bg-transparent ring-4 ring-[#0066cc]/20"
+            style={{
+              top: highlightRect.top - 8,
+              left: highlightRect.left - 8,
+              width: highlightRect.width + 16,
+              height: highlightRect.height + 16,
+              transition: 'top 0.3s ease-out, left 0.3s ease-out, width 0.3s ease-out, height 0.3s ease-out',
+            }}
+          />
+        </>
+      ) : (
         <div
-          className="fixed z-[51] border-4 border-[#0066cc] rounded-lg pointer-events-none transition-all duration-300 bg-transparent ring-4 ring-[#0066cc]/20"
-          style={{
-            top: highlightRect.top - 8,
-            left: highlightRect.left - 8,
-            width: highlightRect.width + 16,
-            height: highlightRect.height + 16,
-          }}
+          ref={overlayRef}
+          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm transition-opacity duration-300"
+          onClick={handleSkip}
         />
       )}
 
       {/* Tutorial card - always visible */}
       <div
-        className="fixed z-[52] card p-4 shadow-xl w-72"
+        className="fixed z-[52] card p-4 shadow-xl w-72 transition-all duration-300 ease-out"
         style={{
           top: displayRect.bottom + 16 > window.innerHeight - 200
             ? displayRect.top - 180
             : Math.min(displayRect.bottom + 16, window.innerHeight - 200),
           left: Math.min(Math.max(displayRect.left, 16), window.innerWidth - 304),
+          transition: 'top 0.3s ease-out, left 0.3s ease-out',
         }}
       >
           <div className="flex items-start justify-between mb-3">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1.5">
-                <span className="text-xs font-medium text-[#6c757d]">
+                <span className="text-xs font-medium text-[#d4d4d1]">
                   {currentStep + 1}/{steps.length}
                 </span>
-                <div className="flex-1 h-0.5 bg-[#e9ecef] rounded-full overflow-hidden">
+                <div className="flex-1 h-0.5 bg-[#3a3a38] rounded-full overflow-hidden">
                   <div
                     className="h-full bg-[#0066cc] transition-all duration-300"
                     style={{ width: `${progress}%` }}
                   />
                 </div>
               </div>
-              <h3 className="serif-heading text-sm mb-1">{step.title}</h3>
-              <p className="text-xs text-[#6c757d] leading-relaxed">{step.description}</p>
+              <h3 className="serif-heading text-sm mb-1 text-[#FAF9F6]">{step.title}</h3>
+              <p className="text-xs text-[#d4d4d1] leading-relaxed">{step.description}</p>
             </div>
             <button
               onClick={handleSkip}
-              className="card p-1 hover:bg-[#f8f9fa] transition-colors ml-2 flex-shrink-0"
+              className="card p-1 hover:bg-[#3a3a38] transition-colors ml-2 flex-shrink-0"
               aria-label="Close tutorial"
             >
-              <X className="w-3 h-3 text-[#6c757d]" />
+              <X className="w-3 h-3 text-[#d4d4d1]" />
             </button>
           </div>
 
           <div className="flex items-center justify-between gap-2">
             <button
               onClick={handleSkip}
-              className="card px-2 py-1 text-xs hover:bg-[#f8f9fa] transition-colors text-[#6c757d]"
+              className="card px-2 py-1 text-xs hover:bg-[#3a3a38] transition-colors text-[#d4d4d1]"
             >
               Skip
             </button>

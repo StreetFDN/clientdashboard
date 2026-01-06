@@ -38,16 +38,23 @@ export async function POST(request: NextRequest) {
     )
 
     const body = await request.json()
-    const { email, is_whitelisted, onboarding_complete } = body
+    const { email, is_whitelisted, onboarding_complete, startup_name, has_launched_token, has_live_token, token_contract } = body
+
+    const updateData: any = {
+      email,
+      updated_at: new Date().toISOString(),
+    }
+
+    if (is_whitelisted !== undefined) updateData.is_whitelisted = is_whitelisted
+    if (onboarding_complete !== undefined) updateData.onboarding_complete = onboarding_complete
+    if (startup_name !== undefined) updateData.startup_name = startup_name
+    if (has_launched_token !== undefined) updateData.has_launched_token = has_launched_token
+    if (has_live_token !== undefined) updateData.has_live_token = has_live_token
+    if (token_contract !== undefined) updateData.token_contract = token_contract
 
     const { data, error } = await adminClient
       .from('whitelist')
-      .upsert({
-        email,
-        is_whitelisted: is_whitelisted !== undefined ? is_whitelisted : true,
-        onboarding_complete: onboarding_complete !== undefined ? onboarding_complete : false,
-        updated_at: new Date().toISOString(),
-      }, {
+      .upsert(updateData, {
         onConflict: 'email'
       })
 

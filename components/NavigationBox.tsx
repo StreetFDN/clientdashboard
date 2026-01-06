@@ -47,6 +47,36 @@ export default function NavigationBox() {
       description: 'Compare your performance across different years with interactive charts.',
       targetSelector: '[data-tutorial="yearly-chart"]',
     },
+    {
+      id: 'annual-profits',
+      title: 'Annual Profits',
+      description: 'View your annual profit breakdown with interactive charts and year-over-year comparisons.',
+      targetSelector: '[data-tutorial="annual-profits"]',
+    },
+    {
+      id: 'activity-manager',
+      title: 'Activity Manager',
+      description: 'Search and filter your activities, track spending, and manage team insights.',
+      targetSelector: '[data-tutorial="activity-manager"]',
+    },
+    {
+      id: 'business-plans',
+      title: 'Business Plans',
+      description: 'Access your business plans including bank loans, accounting, and HR management.',
+      targetSelector: '[data-tutorial="business-plans"]',
+    },
+    {
+      id: 'wallet-verification',
+      title: 'Wallet Security',
+      description: 'Enable 2-step verification to secure your wallet and protect your assets.',
+      targetSelector: '[data-tutorial="wallet-verification"]',
+    },
+    {
+      id: 'stocks-rating',
+      title: 'Stocks & Ratings',
+      description: 'Monitor your main stocks performance and provide feedback on business management.',
+      targetSelector: '[data-tutorial="stocks-rating"]',
+    },
   ]
 
   const handleTutorialComplete = () => {

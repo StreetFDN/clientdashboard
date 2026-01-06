@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
+import { Asterisk } from 'lucide-react'
 
 export default function TermsPage() {
   const router = useRouter()
@@ -60,17 +61,20 @@ export default function TermsPage() {
                 onChange={(e) => setTermsAccepted(e.target.checked)}
                 className="mt-1 w-4 h-4 rounded border-[#3a3a38] bg-[#30302E] text-[#0066cc] focus:ring-[#0066cc]"
               />
-              <span className="text-sm text-[#FAF9F6]">
-                I agree to{' '}
-                <Link href="/terms" className="underline hover:text-[#d4d4d1]">
-                  Street Labs Terms of Service
-                </Link>{' '}
-                and{' '}
-                <Link href="/privacy" className="underline hover:text-[#d4d4d1]">
-                  Privacy Policy
-                </Link>
-                .
-              </span>
+              <div className="flex items-start gap-1.5 flex-1">
+                <Asterisk className="w-3 h-3 text-red-400 mt-0.5 flex-shrink-0" />
+                <span className="text-sm text-[#FAF9F6]">
+                  I agree to Street Labs{' '}
+                  <Link href="/terms" className="underline hover:text-[#d4d4d1]">
+                    Terms of Service
+                  </Link>{' '}
+                  and{' '}
+                  <Link href="/privacy" className="underline hover:text-[#d4d4d1]">
+                    Privacy Policy
+                  </Link>
+                  .
+                </span>
+              </div>
             </label>
 
             <label className="flex items-start gap-3 cursor-pointer">
@@ -80,9 +84,12 @@ export default function TermsPage() {
                 onChange={(e) => setPolicyAccepted(e.target.checked)}
                 className="mt-1 w-4 h-4 rounded border-[#3a3a38] bg-[#30302E] text-[#0066cc] focus:ring-[#0066cc]"
               />
-              <span className="text-sm text-[#FAF9F6]">
-                I agree to Street Labs Client Policy.
-              </span>
+              <div className="flex items-start gap-1.5 flex-1">
+                <Asterisk className="w-3 h-3 text-red-400 mt-0.5 flex-shrink-0" />
+                <span className="text-sm text-[#FAF9F6]">
+                  I agree to Street Labs Client Policy.
+                </span>
+              </div>
             </label>
           </div>
         </div>

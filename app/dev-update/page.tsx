@@ -1,186 +1,249 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
-import { Inter } from 'next/font/google'
+import { useEffect, useState, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import DashboardNavbar from '@/components/DashboardNavbar'
 import DashboardSidebar from '@/components/DashboardSidebar'
 import NavigationBox from '@/components/NavigationBox'
-import { redrawGlass } from '@/lib/liquid-glass'
+import GitHubAppInstall from '@/components/GitHubAppInstall'
+import { GitHubActivityCard, GitHubActivitySummaryCard } from '@/components/GitHubActivityCard'
+import type { GitHubActivitySummary } from '@/types/github'
+import { Github, RefreshCw, Calendar, TrendingUp, CheckCircle } from 'lucide-react'
 
-const inter = Inter({ subsets: ['latin'] })
-
-export default function DevUpdatePage() {
+function DevUpdateContent() {
+  const searchParams = useSearchParams()
   const [sidebarOpen, setSidebarOpen] = useState(true)
-  
-  // Slider values for boxes (4 boxes)
-  const [boxBlur, setBoxBlur] = useState(0.0)
-  const [boxRefraction, setBoxRefraction] = useState(200)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [summary, setSummary] = useState<GitHubActivitySummary | null>(null)
+  const [period, setPeriod] = useState<'week' | 'month' | 'all'>('week')
+  const [showSuccess, setShowSuccess] = useState(false)
 
-  const videoRef = useRef<HTMLVideoElement>(null)
-  
-  // Refs for liquid glass effect - 4 boxes
-  const welcomeCardRefs = [useRef<HTMLDivElement>(null), useRef<HTMLDivElement>(null), useRef<HTMLDivElement>(null), useRef<HTMLDivElement>(null)]
-  const welcomeBoxRefs = [useRef<HTMLDivElement>(null), useRef<HTMLDivElement>(null), useRef<HTMLDivElement>(null), useRef<HTMLDivElement>(null)]
-  const welcomeContentRefs = [useRef<HTMLDivElement>(null), useRef<HTMLDivElement>(null), useRef<HTMLDivElement>(null), useRef<HTMLDivElement>(null)]
-
-  useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.play().catch((err) => {
-        console.log('Video autoplay prevented:', err)
-      })
-    }
-  }, [])
-
-  // Initialize liquid glass effect for all 4 welcome boxes
-  useEffect(() => {
-    const observers: ResizeObserver[] = []
-
-    welcomeCardRefs.forEach((cardRef, index) => {
-      const boxRef = welcomeBoxRefs[index]
-      const contentRef = welcomeContentRefs[index]
+  const fetchActivity = async () => {
+    try {
+      setLoading(true)
+      setError(null)
       
-      if (!cardRef.current || !boxRef.current || !contentRef.current) return
-
-      const welcomeCard = cardRef.current
-      const welcomeBox = boxRef.current
-      const welcomeContent = contentRef.current
-
-      const updateGlass = () => {
-        const rect = welcomeContent.getBoundingClientRect()
-        const width = Math.round(rect.width)
-        const height = Math.round(rect.height)
-
-        welcomeBox.dataset.blur = boxBlur.toString()
-        welcomeBox.dataset.strength = boxRefraction.toString()
-        welcomeBox.dataset.saturate = '0.7'
-        welcomeBox.dataset.brightness = '1.6'
-        welcomeBox.dataset.cab = '0'
-        welcomeBox.dataset.depth = '10'
-
-        const overlayBg = welcomeCard.querySelector('.lg-overlay-bg') as HTMLElement
-        const opacityValue = -0.15
-        const clampedOpacity = Math.max(0, Math.min(1, opacityValue + 0.1))
-        if (overlayBg) {
-          overlayBg.style.background = `rgba(255, 255, 255, ${clampedOpacity})`
-        }
-
-        const currentBlur = parseFloat(welcomeBox.dataset.blur || '0')
-        const chromaticAberration = parseFloat(welcomeBox.dataset.cab || '0')
-        const depth = parseFloat(welcomeBox.dataset.depth || '10')
-        const strength = parseFloat(welcomeBox.dataset.strength || '200')
-        const saturate = parseFloat(welcomeBox.dataset.saturate || '1.2')
-        const brightness = parseFloat(welcomeBox.dataset.brightness || '1.6')
-
-        welcomeBox.style.height = `${height}px`
-        welcomeBox.style.width = `${width}px`
-
-        if (typeof window !== 'undefined') {
-          const testEl = document.createElement('div')
-          testEl.style.cssText = 'backdrop-filter: url(#test)'
-          const supportsBackdropFilterUrl = testEl.style.backdropFilter === 'url(#test)' || testEl.style.backdropFilter === 'url("#test")'
-
-          if (supportsBackdropFilterUrl) {
-            redrawGlass(welcomeCard, welcomeBox, welcomeContent, {
-              blur: currentBlur,
-              strength,
-              saturate,
-              brightness,
-              chromaticAberration,
-              depth,
-            })
-          } else {
-            ;(welcomeBox.style as any).webkitBackdropFilter = `blur(${width / 10}px) saturate(180%)`
-          }
-        }
+      const response = await fetch(`/api/github/activity?period=${period}`)
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to fetch activity')
       }
-
-      updateGlass()
-
-      const resizeObserver = new ResizeObserver(() => {
-        updateGlass()
-      })
-      resizeObserver.observe(welcomeCard)
-      observers.push(resizeObserver)
-    })
-
-    return () => {
-      observers.forEach(observer => observer.disconnect())
+      
+      const data = await response.json()
+      setSummary(data)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load GitHub activity')
+      console.error('Error fetching GitHub activity:', err)
+    } finally {
+      setLoading(false)
     }
-  }, [boxBlur, boxRefraction])
+  }
+
+  useEffect(() => {
+    fetchActivity()
+  }, [period])
+
+  useEffect(() => {
+    // Check for success message from callback
+    if (searchParams.get('installed') === 'true') {
+      setShowSuccess(true)
+      setTimeout(() => setShowSuccess(false), 5000)
+      // Refresh activity after installation
+      fetchActivity()
+    }
+    if (searchParams.get('error')) {
+      setError(searchParams.get('error') || 'An error occurred')
+    }
+  }, [searchParams])
+
+  const handleInstallComplete = () => {
+    // Refresh activity after installation
+    fetchActivity()
+  }
 
   return (
-    <div className={`min-h-screen ${inter.className} relative page-transition`} style={{ backgroundColor: 'transparent' }}>
+    <div className="min-h-screen relative page-transition bg-[#262624]">
       <NavigationBox />
       <DashboardSidebar isOpen={sidebarOpen} />
       <DashboardNavbar 
         pageTitle="Dev Update" 
-        logoSize={200} 
         sidebarOpen={sidebarOpen}
         onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
       />
 
-      {/* Video Background - Static at top, always full screen */}
-      <div className="fixed inset-0 z-0 bg-black">
-        <video
-          ref={videoRef}
-          autoPlay
-          loop
-          muted
-          playsInline
-          preload="auto"
-          className="absolute inset-0 w-full h-full object-cover"
-          style={{ transform: 'none' }}
-        >
-          <source src="/videos/traffic1-bg.mp4" type="video/mp4" />
-        </video>
-        {/* Dark overlay for better text readability */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/30 to-black/40" />
-        
-        {/* Welcome Boxes over video - 4 boxes in a square */}
-        <div className="absolute inset-0 flex items-center justify-center z-10">
-          <div className="w-full px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-2 gap-6 max-w-4xl mx-auto">
-              {[0, 1, 2, 3].map((index) => (
-                <div 
-                  key={index}
-                  ref={welcomeCardRefs[index]}
-                  className="liquid-glass-card rounded-[48px] relative overflow-hidden shadow"
+      {/* Main Content */}
+      <div 
+        className="relative transition-all duration-300 ease-in-out overflow-y-auto"
+        style={{
+          marginLeft: sidebarOpen ? '256px' : '0',
+          maxWidth: sidebarOpen ? 'calc(100% - 256px)' : '100%',
+          marginTop: '64px',
+          height: 'calc(100vh - 64px)',
+        }}
+      >
+        <div className="w-full px-6 py-5">
+          {/* Header Section */}
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h1 className="serif-heading text-3xl text-[#FAF9F6] mb-2">
+                Development Activity
+              </h1>
+              <p className="text-sm text-[#d4d4d1]">
+                Track your GitHub development progress and contributions
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              {/* Period Selector */}
+              <div className="flex items-center gap-2 card p-1">
+                <button
+                  onClick={() => setPeriod('week')}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                    period === 'week'
+                      ? 'bg-[#0066cc] text-white'
+                      : 'text-[#d4d4d1] hover:text-[#FAF9F6]'
+                  }`}
                 >
-                  {/* Liquid Glass Overlay Background */}
-                  <div className="lg-overlay-bg" />
-
-                  {/* Liquid Glass Content */}
-                  <div ref={welcomeContentRefs[index]} className="lg-content p-6">
-                    <div className="text-center">
-                      <h2 className="text-2xl font-bold text-black mb-3">
-                        Weekly Dev Update
-                      </h2>
-                      <p className="text-black/90 mb-4">
-                        Development progress and updates for this week
-                      </p>
-                      
-                      <div className="text-left space-y-2 text-black/90 max-w-md mx-auto">
-                        <h3 className="text-lg font-semibold mb-3 text-black text-center">Development Status</h3>
-                        <p><strong>Current Sprint:</strong> Sprint 15</p>
-                        <p><strong>Features Completed:</strong> 3</p>
-                        <p><strong>Bugs Fixed:</strong> 12</p>
-                        <p><strong>In Progress:</strong> 5 tasks</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Liquid Glass Filter Layer */}
-                  <div className="lg-filter-layer">
-                    <div ref={welcomeBoxRefs[index]} id={`liquid-glass-dev-welcome-${index}`} className="glass-box" />
-                  </div>
-                </div>
-              ))}
+                  Week
+                </button>
+                <button
+                  onClick={() => setPeriod('month')}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                    period === 'month'
+                      ? 'bg-[#0066cc] text-white'
+                      : 'text-[#d4d4d1] hover:text-[#FAF9F6]'
+                  }`}
+                >
+                  Month
+                </button>
+                <button
+                  onClick={() => setPeriod('all')}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                    period === 'all'
+                      ? 'bg-[#0066cc] text-white'
+                      : 'text-[#d4d4d1] hover:text-[#FAF9F6]'
+                  }`}
+                >
+                  All Time
+                </button>
+              </div>
+              <button
+                onClick={fetchActivity}
+                disabled={loading}
+                className="card p-2 hover:bg-[#3a3a38] transition-colors disabled:opacity-50"
+              >
+                <RefreshCw className={`w-4 h-4 text-[#d4d4d1] ${loading ? 'animate-spin' : ''}`} />
+              </button>
             </div>
           </div>
+
+          {/* Success Message */}
+          {showSuccess && (
+            <div className="card p-4 mb-6 bg-green-900/20 border border-green-800/50">
+              <div className="flex items-center gap-3">
+                <CheckCircle className="w-5 h-5 text-green-400" />
+                <div>
+                  <p className="text-sm font-medium text-green-400">GitHub App installed successfully!</p>
+                  <p className="text-xs text-green-300 mt-1">Your development activity is now being tracked.</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* GitHub App Installation */}
+          <div className="mb-6">
+            <GitHubAppInstall onInstallComplete={handleInstallComplete} />
+          </div>
+
+          {/* Error State */}
+          {error && (
+            <div className="card p-4 mb-6 bg-red-900/20 border border-red-800/50">
+              <div className="flex items-center gap-3">
+                <Github className="w-5 h-5 text-red-400" />
+                <div>
+                  <p className="text-sm font-medium text-red-400">Failed to load activity</p>
+                  <p className="text-xs text-red-300 mt-1">{error}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Loading State */}
+          {loading && !summary && (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0066cc] mx-auto mb-4"></div>
+                <p className="text-sm text-[#d4d4d1]">Loading GitHub activity...</p>
+              </div>
+            </div>
+          )}
+
+          {/* Content Grid */}
+          {summary && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Summary Card */}
+              <div className="lg:col-span-1">
+                <GitHubActivitySummaryCard summary={summary} />
+              </div>
+
+              {/* Activities List */}
+              <div className="lg:col-span-2">
+                <div className="card p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-[#FAF9F6]">Recent Activity</h3>
+                    <span className="text-xs text-[#d4d4d1]">
+                      {summary.activities.length} activities
+                    </span>
+                  </div>
+                  
+                  {summary.activities.length === 0 ? (
+                    <div className="text-center py-12">
+                      <Github className="w-12 h-12 text-[#d4d4d1] mx-auto mb-4 opacity-50" />
+                      <p className="text-sm text-[#d4d4d1]">No activity found for this period</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3 max-h-[600px] overflow-y-auto">
+                      {summary.activities.map((activity) => (
+                        <GitHubActivityCard key={activity.id} activity={activity} />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Empty State - No Installation */}
+          {!loading && !error && !summary && (
+            <div className="card p-12 text-center">
+              <Github className="w-16 h-16 text-[#d4d4d1] mx-auto mb-4 opacity-50" />
+              <h3 className="text-lg font-semibold text-[#FAF9F6] mb-2">
+                Connect GitHub to get started
+              </h3>
+              <p className="text-sm text-[#d4d4d1] mb-6">
+                Install the GitHub App to track your development activity and contributions
+              </p>
+            </div>
+          )}
         </div>
       </div>
-
     </div>
+  )
+}
+
+export default function DevUpdatePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen relative page-transition bg-[#262624] flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0066cc] mx-auto mb-4"></div>
+          <p className="text-sm text-[#d4d4d1]">Loading...</p>
+        </div>
+      </div>
+    }>
+      <DevUpdateContent />
+    </Suspense>
   )
 }
 

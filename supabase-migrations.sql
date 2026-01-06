@@ -4,6 +4,10 @@ CREATE TABLE IF NOT EXISTS whitelist (
   email TEXT UNIQUE NOT NULL,
   is_whitelisted BOOLEAN DEFAULT false,
   onboarding_complete BOOLEAN DEFAULT false,
+  startup_name TEXT,
+  has_launched_token BOOLEAN,
+  has_live_token BOOLEAN,
+  token_contract TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

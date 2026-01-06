@@ -73,41 +73,51 @@ export default function SignUpPage() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-6 page-transition bg-[#f8f9fa]">
-      {/* Top-left Logo */}
-      <div className="absolute top-8 left-8 z-20">
-        <Link href="/">
-          <Image
-            src="/Branding/street-logo.png"
-            alt="Logo"
-            width={120}
-            height={42}
-            className="object-contain"
-          />
-        </Link>
-      </div>
+    <div className="flex flex-col items-center justify-center min-h-screen p-6 page-transition bg-[#262624]">
+      <div className="w-full max-w-md">
+        {/* Logo */}
+        <div className="flex justify-center mb-8">
+          <Link href="/">
+            <Image
+              src="/Branding/street-logo.png"
+              alt="Street Labs"
+              width={120}
+              height={42}
+              className="object-contain"
+            />
+          </Link>
+        </div>
 
-      {/* Main Content */}
-      <div className="relative z-10 w-full max-w-md mx-auto">
-        <div className="card p-8 md:p-10">
+        {/* Main Content */}
+        <div className="text-center mb-8">
+          <h1 className="serif-heading text-3xl text-[#FAF9F6] mb-2">
+            Let's get you started.
+          </h1>
+          <p className="text-sm text-[#d4d4d1]">
+            Create your account to begin your journey.
+          </p>
+        </div>
+
+        {/* Sign Up Card */}
+        <div className="card p-6 mb-6">
           {/* Header */}
-          <div className="text-center mb-8">
-            <h1 className="serif-heading text-3xl md:text-4xl text-[#212529] mb-3">
+          <div className="text-center mb-6">
+            <h2 className="text-lg font-medium text-[#FAF9F6] mb-1">
               Create your account
-            </h1>
-            <p className="text-sm text-[#6c757d]">
+            </h2>
+            <p className="text-xs text-[#d4d4d1]">
               Deploy compliant, equity-anchored tokens and supercharge your startup's growth
             </p>
           </div>
 
           {/* Messages */}
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-700">
+            <div className="mb-4 p-3 bg-red-900/20 border border-red-800/50 rounded-md text-sm text-red-400">
               {error}
             </div>
           )}
           {message && (
-            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md text-sm text-green-700">
+            <div className="mb-4 p-3 bg-green-900/20 border border-green-800/50 rounded-md text-sm text-green-400">
               {message}
             </div>
           )}
@@ -115,7 +125,7 @@ export default function SignUpPage() {
           {/* Sign Up Form */}
           <form onSubmit={handleSignUp} className="space-y-4">
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6c757d]" />
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#d4d4d1]" />
               <input
                 type="email"
                 required
@@ -127,7 +137,7 @@ export default function SignUpPage() {
             </div>
 
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6c757d]" />
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#d4d4d1]" />
               <input
                 type={showPassword ? 'text' : 'password'}
                 required
@@ -139,14 +149,14 @@ export default function SignUpPage() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6c757d] hover:text-[#212529]"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#d4d4d1] hover:text-[#FAF9F6]"
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
 
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6c757d]" />
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#d4d4d1]" />
               <input
                 type={showConfirmPassword ? 'text' : 'password'}
                 required
@@ -158,7 +168,7 @@ export default function SignUpPage() {
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6c757d] hover:text-[#212529]"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#d4d4d1] hover:text-[#FAF9F6]"
               >
                 {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
@@ -167,25 +177,22 @@ export default function SignUpPage() {
             <button
               type="submit"
               disabled={loading}
-              className="btn btn-primary w-full"
+              className="w-full px-6 py-3 bg-[#FAF9F6] text-[#262624] rounded-lg font-medium hover:bg-[#e8e7e4] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Creating account...' : 'Create Account'}
             </button>
           </form>
 
-          {/* Divider */}
-          <div className="flex items-center my-6">
-            <div className="flex-1 border-t border-[#e9ecef]"></div>
-            <span className="px-4 text-xs text-[#6c757d]">Already have an account?</span>
-            <div className="flex-1 border-t border-[#e9ecef]"></div>
-          </div>
+        </div>
 
-          {/* Sign In Link */}
-          <div className="text-center">
-            <Link href="/auth/signin" className="text-sm text-[#0066cc] hover:underline">
-              Sign in instead →
+        {/* Sign In Link */}
+        <div className="text-center mt-4">
+          <p className="text-sm text-[#d4d4d1]">
+            Already have an account?{' '}
+            <Link href="/auth/signin" className="text-[#0066cc] hover:text-[#0080ff] hover:underline">
+              Sign in →
             </Link>
-          </div>
+          </p>
         </div>
       </div>
     </div>
