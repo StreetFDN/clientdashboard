@@ -38,44 +38,96 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Check if user has GitHub installation stored
-    const { data: installation, error: dbError } = await supabase
-      .from('github_installations')
-      .select('*')
-      .eq('user_id', user.id)
-      .single()
-
-    // Handle table doesn't exist error gracefully
-    if (dbError) {
-      if (dbError.code === 'PGRST116') {
-        // No rows returned - this is fine, user hasn't installed yet
+    // Get Supabase JWT token to send to backend
+    const { data: { session } } = await supabase.auth.getSession()
+    const supabaseToken = session?.access_token
+    
+    // Check installation from backend (street-client) instead of Supabase
+    // The backend stores installations in its own database
+    const backendUrl = process.env.GITHUB_BACKEND_URL?.startsWith('http') 
+      ? process.env.GITHUB_BACKEND_URL 
+      : `https://${process.env.GITHUB_BACKEND_URL || 'street-client-production.up.railway.app'}`
+    
+    const cookieHeader = request.headers.get('cookie') || ''
+    
+    try {
+      // Step 1: Get user's clients from backend
+      const clientsResponse = await fetch(`${backendUrl}/api/clients`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(supabaseToken ? { 'Authorization': `Bearer ${supabaseToken}` } : {}),
+          'Cookie': cookieHeader,
+        },
+        credentials: 'include',
+      })
+      
+      if (!clientsResponse.ok) {
+        // If can't get clients, return not installed
         return NextResponse.json({
           installed: false,
           install_url: GITHUB_APP_INSTALL_URL || `https://github.com/apps/${GITHUB_APP_ID}/installations/new`,
         }, { status: 200 })
-      } else if (dbError.code === '42P01' || dbError.message?.includes('does not exist')) {
-        // Table doesn't exist - return helpful error
-        return NextResponse.json(
-          { 
-            error: 'Database table not found',
-            message: 'Please run the supabase-github-integration.sql migration in Supabase',
-            installed: false,
-            install_url: GITHUB_APP_INSTALL_URL || `https://github.com/apps/${GITHUB_APP_ID}/installations/new`,
-          },
-          { status: 200 } // Return 200 so UI can still show install button
-        )
-      } else {
-        console.error('Database error:', dbError)
-        throw dbError
       }
+      
+      const clients = await clientsResponse.json()
+      
+      if (!clients || clients.length === 0) {
+        // No clients = no installation
+        return NextResponse.json({
+          installed: false,
+          install_url: GITHUB_APP_INSTALL_URL || `https://github.com/apps/${GITHUB_APP_ID}/installations/new`,
+        }, { status: 200 })
+      }
+      
+      // Step 2: Check installations for all clients (installations might be on any client)
+      let allInstallations: any[] = []
+      
+      for (const client of clients) {
+        try {
+          const installationsResponse = await fetch(`${backendUrl}/api/clients/${client.id}/installations`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(supabaseToken ? { 'Authorization': `Bearer ${supabaseToken}` } : {}),
+              'Cookie': cookieHeader,
+            },
+            credentials: 'include',
+          })
+          
+          if (installationsResponse.ok) {
+            const clientInstallations = await installationsResponse.json()
+            if (clientInstallations && Array.isArray(clientInstallations)) {
+              allInstallations = allInstallations.concat(clientInstallations)
+            }
+          }
+        } catch (err) {
+          console.error(`Error checking installations for client ${client.id}:`, err)
+          // Continue checking other clients
+        }
+      }
+      
+      const hasInstallation = allInstallations.length > 0
+      const firstInstallation = hasInstallation ? allInstallations[0] : null
+      
+      return NextResponse.json({
+        installed: hasInstallation,
+        installation_id: firstInstallation?.installationId,
+        account: firstInstallation ? {
+          login: firstInstallation.accountLogin,
+          type: 'User', // Default, could be enhanced
+        } : undefined,
+        install_url: GITHUB_APP_INSTALL_URL || `https://github.com/apps/${GITHUB_APP_ID}/installations/new`,
+      }, { status: 200 })
+      
+    } catch (error) {
+      console.error('Error checking installation from backend:', error)
+      // On error, return not installed (graceful degradation)
+      return NextResponse.json({
+        installed: false,
+        install_url: GITHUB_APP_INSTALL_URL || `https://github.com/apps/${GITHUB_APP_ID}/installations/new`,
+      }, { status: 200 })
     }
-
-    return NextResponse.json({
-      installed: !!installation,
-      installation_id: installation?.installation_id,
-      account: installation?.account,
-      install_url: GITHUB_APP_INSTALL_URL || `https://github.com/apps/${GITHUB_APP_ID}/installations/new`,
-    }, { status: 200 })
   } catch (error) {
     console.error('Error checking GitHub installation:', error)
     return NextResponse.json(
