@@ -168,19 +168,20 @@ export default function GitHubAppInstall({ onInstallComplete, compact = false }:
     )
   }
 
-  // Step 1: Connect GitHub Account (if not connected)
-  if (!githubConnected) {
+  // Step 1: Connect GitHub Account (optional - skip if GitHub OAuth not enabled in Supabase)
+  // We'll show install button even if not connected, since backend can match by email
+  if (!githubConnected && !installation?.installed) {
     return (
       <div className={`card p-${compact ? '3' : '4'} ${compact ? '' : 'flex flex-col gap-4'}`}>
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-[#30302E] border border-[#3a3a38] flex items-center justify-center">
-            <Link2 className="w-5 h-5 text-[#FAF9F6]" />
+            <Github className="w-5 h-5 text-[#FAF9F6]" />
           </div>
           <div className="flex-1">
-            <h3 className="text-sm font-medium text-[#FAF9F6]">Connect GitHub Account</h3>
+            <h3 className="text-sm font-medium text-[#FAF9F6]">Install GitHub App</h3>
             {!compact && (
               <p className="text-xs text-[#d4d4d1] mt-1">
-                Link your GitHub account first to ensure proper installation tracking
+                Install the GitHub App to track your development activity
               </p>
             )}
           </div>
@@ -192,18 +193,40 @@ export default function GitHubAppInstall({ onInstallComplete, compact = false }:
           </div>
         )}
         
-        <button
-          onClick={handleConnectGitHub}
-          disabled={loading}
-          className="w-full px-4 py-2 bg-[#0066cc] text-white rounded-lg font-medium hover:bg-[#0052a3] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-        >
-          <Github className="w-4 h-4" />
-          <span>Connect with GitHub</span>
-        </button>
+        <div className="flex flex-col gap-2">
+          <button
+            onClick={handleInstall}
+            disabled={installing || !installation?.install_url}
+            className="w-full px-4 py-2 bg-[#0066cc] text-white rounded-lg font-medium hover:bg-[#0052a3] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            {installing ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                <span>Installing...</span>
+              </>
+            ) : (
+              <>
+                <Github className="w-4 h-4" />
+                <span>Install GitHub App</span>
+                <ExternalLink className="w-3 h-3" />
+              </>
+            )}
+          </button>
+          
+          {!compact && (
+            <button
+              onClick={handleConnectGitHub}
+              className="w-full px-4 py-2 bg-[#3a3a38] text-[#d4d4d1] rounded-lg font-medium hover:bg-[#454543] transition-colors flex items-center justify-center gap-2 text-sm"
+            >
+              <Link2 className="w-4 h-4" />
+              <span>Connect GitHub Account (Optional)</span>
+            </button>
+          )}
+        </div>
         
         {!compact && (
           <p className="text-xs text-[#d4d4d1] text-center">
-            After connecting, you'll be able to install the GitHub App
+            The app will be linked automatically using your email address
           </p>
         )}
       </div>
