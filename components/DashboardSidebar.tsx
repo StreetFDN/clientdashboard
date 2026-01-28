@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Code, Play, TrendingUp } from 'lucide-react'
+import { LayoutDashboard, Code, Play, TrendingUp,  Bitcoin } from 'lucide-react'
 
 interface DashboardSidebarProps {
   isOpen: boolean
@@ -19,6 +19,7 @@ export default function DashboardSidebar({ isOpen }: DashboardSidebarProps) {
     { href: '/dev-update', label: 'Dev Update', icon: Code },
     { href: '/execution-update', label: 'Execution Update', icon: Play },
     { href: '/signal-update', label: 'Signal Update', icon: TrendingUp },
+    { href: "/token", label: "Token Data", icon: Bitcoin}
   ]
 
   return (
