@@ -12,6 +12,8 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Calendar, Mail, Github } from "lucide-react";
 import { User } from "@supabase/supabase-js";
+import { BACKEND_URL } from "@/lib/constants";
+import { Button } from "@/components/ui/button";
 
 const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString("en-US", {
@@ -69,9 +71,19 @@ const ProfileCard = ({ user }: { user: User }) => {
             {user.app_metadata.provider}
           </Badge>
         </div>
+        <Button onClick={checkBackendAuth}>Check BE Auth</Button>
       </CardContent>
     </Card>
   );
 };
 
 export default ProfileCard;
+
+// Remove this in prod,this is only to test supabase connection on backend
+const checkBackendAuth = async () => {
+  const fetchResponse = await fetch(`${BACKEND_URL}/test-auth`, {
+    credentials: "include",
+  });
+  const response = await fetchResponse.json();
+  console.log("Response", response)
+};
