@@ -14,11 +14,22 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = await createClient()
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
+    const { data,error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
       const forwardedHost = request.headers.get('x-forwarded-host') // original origin before load balancer
       const isLocalEnv = process.env.NODE_ENV === 'development'
       if (isLocalEnv) {
+
+
+        const user = data.user;
+
+        // TODO: Call the endpoint to get user's role. Only allow Street teams and whitelisted users to login
+        const isUserAllowed = true
+
+        if (!isUserAllowed) {
+          return NextResponse.redirect(`${origin}/auth/error?code=Not+whitelisted+user`)
+        }
+
         // we can be sure that there is no load balancer in between, so no need to watch for X-Forwarded-Host
         return NextResponse.redirect(`${origin}${next}`)
       } else if (forwardedHost) {

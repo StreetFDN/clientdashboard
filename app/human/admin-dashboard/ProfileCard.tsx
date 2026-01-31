@@ -14,6 +14,7 @@ import { Calendar, Mail, Github } from "lucide-react";
 import { User } from "@supabase/supabase-js";
 import { BACKEND_URL } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
+import InstallationCreate from "./InstallationCreate";
 
 const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString("en-US", {
@@ -72,6 +73,7 @@ const ProfileCard = ({ user }: { user: User }) => {
           </Badge>
         </div>
         <Button onClick={checkBackendAuth}>Check BE Auth</Button>
+        <InstallationCreate />
       </CardContent>
     </Card>
   );
