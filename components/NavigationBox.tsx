@@ -111,7 +111,7 @@ export default function NavigationBox() {
           <Link href="/signal-update" className="btn btn-secondary text-xs py-1.5 text-center">
             Signal Update
           </Link>
-          <Link href="/token" className="btn btn-secondary text-xs py-1.5 text-center">
+          <Link href="/human/token" className="btn btn-secondary text-xs py-1.5 text-center">
             Token Data
           </Link>
         </div>

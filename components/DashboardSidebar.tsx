@@ -19,7 +19,7 @@ export default function DashboardSidebar({ isOpen }: DashboardSidebarProps) {
     { href: '/dev-update', label: 'Dev Update', icon: Code },
     { href: '/execution-update', label: 'Execution Update', icon: Play },
     { href: '/signal-update', label: 'Signal Update', icon: TrendingUp },
-    { href: "/token", label: "Token Data", icon: Bitcoin}
+    { href: "/human/token", label: "Token Data", icon: Bitcoin}
   ]
 
   return (
